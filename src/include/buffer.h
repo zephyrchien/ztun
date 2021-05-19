@@ -1,7 +1,6 @@
 #ifndef BUFFER_H_
 #define BUFFER_H_
 
-#include <array>
 #include <memory>
 #include "utils.h"
 
@@ -9,19 +8,13 @@
 class Buffer
 {
     public:
-        bool ov;
         bool done;
-        int r_offset;
-        int w_offset;
-        const static int size = 512;
-        char* data;
 
         explicit Buffer();
-        explicit Buffer(Buffer&&);
-        Buffer& operator=(Buffer&&);
-        ~Buffer();
-        void* r_cursor();
-        void* w_cursor();
+        virtual ~Buffer();
+        bool is_done();
+        virtual int read(const int, int&) = 0;
+        virtual int write(const int, int&) = 0;
 };
 
 typedef std::shared_ptr<Buffer> SharedBuffer;

@@ -27,6 +27,7 @@ using std::ifstream;
 const static int SALEN = sizeof(sockaddr_in);
 class Event;
 class Buffer;
+class RingBuffer;
 class Config;
 class Endpoint;
 class Listener;

@@ -31,8 +31,6 @@ int Connector::on_connect()
         delete this;
         return Event::ERR;
     }
-    SharedBuffer rbuf = std::make_shared<Buffer>();
-    SharedBuffer wbuf = std::make_shared<Buffer>();
     int lfd2 = dup_with_opt(lfd_);
     int rfd2 = dup_with_opt(rfd_);
     if (lfd2 < 0 || rfd2 < 0)
@@ -46,6 +44,8 @@ int Connector::on_connect()
         delete this;
         return Event::ERR;
     }
+    SharedBuffer rbuf = std::make_shared<RingBuffer>();
+    SharedBuffer wbuf = std::make_shared<RingBuffer>();
     ReadWriter* rw_fwd = new ReadWriter(event_, lfd_, lfd2, rbuf, wbuf);
     ReadWriter* rw_rev = new ReadWriter(event_, rfd_, rfd2, wbuf, rbuf);
     rw_fwd->set_another(rw_rev);

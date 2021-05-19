@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <memory.h>
 #include "event.h"
-#include "buffer.h"
+#include "ringbuffer.h"
 #include "endpoint.h"
 #include "readwriter.h"
 #include "utils.h"

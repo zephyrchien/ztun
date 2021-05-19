@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <cerrno>
 #include "event.h"
-#include "buffer.h"
+#include "ringbuffer.h"
 #include "endpoint.h"
 #include "utils.h"
 
