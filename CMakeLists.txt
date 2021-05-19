@@ -1,6 +1,7 @@
 project (ztun)
 cmake_minimum_required (VERSION 3.10)
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -O2")
 
 set (target "ztun")
 set (utils "utils")

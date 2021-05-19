@@ -1,0 +1,11 @@
+# comment is ignored
+# assign tunnel with a pair of local & remote
+# examples below
+
+# full version
+local = 127.0.0.1:15000
+remote = 127.0.0.1:20000
+
+# use default addr(0.0.0.0)
+#local = :20000
+#remote = 127.0.0.1:30000
