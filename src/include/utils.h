@@ -31,6 +31,7 @@ using std::ifstream;
 const static int SALEN = sizeof(sockaddr_in);
 class Event;
 class Buffer;
+class ZBuffer;
 class RingBuffer;
 class Config;
 class Endpoint;

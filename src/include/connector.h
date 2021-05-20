@@ -9,6 +9,7 @@
 #include <memory.h>
 #include "event.h"
 #include "ringbuffer.h"
+#include "zbuffer.h"
 #include "endpoint.h"
 #include "readwriter.h"
 #include "utils.h"
