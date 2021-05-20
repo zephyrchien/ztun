@@ -13,7 +13,7 @@ Connector::Connector(const SharedEvent event, const SharedSA rsa, const int lfd)
 
 Connector::~Connector() { }
 
-int Connector::callback(uint32_t events)
+int Connector::callback(uint32_t events, PtrSet& destroyed)
 {
     if (events & EPOLLOUT) return on_connect();
     return Event::ERR;
@@ -51,9 +51,9 @@ int Connector::on_connect()
     rw_fwd->set_another(rw_rev);
     rw_rev->set_another(rw_fwd);
     event_->add(lfd_, EPOLLIN|EPOLLET, rw_fwd);
-    //event_->add(lfd2, EPOLLOUT|EPOLLET, rw_fwd);
+    event_->add(lfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_fwd);
     event_->mod(rfd_, EPOLLIN|EPOLLET, rw_rev);
-    //event_->add(rfd2, EPOLLOUT|EPOLLET, rw_rev);
+    event_->add(rfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_rev);
     delete this;
     return Event::OK;
 }

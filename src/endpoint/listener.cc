@@ -1,30 +1,33 @@
 #include "listener.h"
 
 
-Listener::Listener(const SharedEvent event, const SharedSA rsa, const int lfd):
-    Endpoint(event), rsa_(rsa), lfd_(lfd) { }
+Listener::Listener(const SharedEvent event, const SharedSA rsa, const int fd):
+    Endpoint(event), rsa_(rsa), fd_(fd) { }
 
 Listener::Listener(const SharedEvent event, const SharedSA rsa, const OwnedSA lsa):
-    Endpoint(event), rsa_(rsa), lfd_(socket(AF_INET, SOCK_STREAM, 0))
+    Endpoint(event), rsa_(rsa), fd_(socket(AF_INET, SOCK_STREAM, 0))
 {
-    set_reuseaddr(lfd_);
-    set_nonblocking(lfd_);
-    bind(lfd_, (sockaddr *)lsa.get(), SALEN);
-    listen(lfd_, backlog_);
+    set_reuseaddr(fd_);
+    set_nonblocking(fd_);
+    bind(fd_, (sockaddr *)lsa.get(), SALEN);
+    listen(fd_, backlog_);
 }
 
-Listener::~Listener() { }
+Listener::~Listener()
+{
+    close(fd_);
+}
 
 int Listener::inner_fd() const
 {
-    return lfd_;
+    return fd_;
 }
 
 int Listener::on_accept()
 {
     sockaddr_in sa;
     socklen_t len = SALEN;
-    int conn = accept(lfd_, (sockaddr *)&sa, &len);
+    int conn = accept(fd_, (sockaddr *)&sa, &len);
     if (conn == -1) return Event::OK;
     set_nonblocking(conn);
     int rfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -50,7 +53,7 @@ int Listener::on_accept()
     return Event::ERR;
 }
 
-int Listener::callback(uint32_t events)
+int Listener::callback(uint32_t events, PtrSet& destroyed)
 {
     if (events & EPOLLIN) return on_accept();
     return Event::ERR;

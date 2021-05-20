@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <signal.h>
 #include "event.h"
 #include "endpoint.h"
 #include "listener.h"
@@ -19,6 +20,9 @@ const static string usage =
 
 int main(int argc, char **argv)
 {
+    // ignore SIGPIPE when write to a closed socket
+    signal(SIGPIPE, SIG_IGN);
+
     opterr = 0;
     int opt;
     string local_s, remote_s, config_file;
@@ -73,7 +77,7 @@ int main(int argc, char **argv)
         << std::endl;
         auto lsa = OwnedSA(to_sockaddr(c.local_addr, c.local_port));
         auto rsa = SharedSA(to_sockaddr(c.remote_addr, c.remote_port));
-        listeners.emplace_back(Listener(event, rsa, std::move(lsa)));
+        listeners.emplace_back(event, rsa, std::move(lsa));
     }
     for (const auto& lis: listeners)
     {

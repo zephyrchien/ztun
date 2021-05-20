@@ -47,28 +47,28 @@ int Event::poll(int timeout)
 int Event::run()
 {
     int nready, ev, ret;
-    bool need_skip;
+    bool need_skip = false;
     Endpoint* ep;
-    std::unordered_set<uintptr_t> destroyed;
+    PtrSet destroyed;
     destroyed.reserve(20);
     while(true)
     {
-        need_skip = false;
+        if (need_skip)
+        {
+            destroyed.clear();
+            need_skip = false;
+        }
         if ((nready = epoll_wait(fd_, events_.data(), maxev_, -1)) <= 0) continue;
         for (int i=0; i<nready; i++)
         {
             ev = events_[i].events;
             ep = (Endpoint *)events_[i].data.ptr;
-            if (need_skip && destroyed.find(uintptr_t(ep))!=destroyed.end())
+            if (need_skip && destroyed.find(uintptr_t(ep)) != destroyed.end())
             {
                 continue;
             }
-            ret = ep->callback(ev);
-            if (ret == Event::CAUTION)
-            {
-                need_skip = true;
-                destroyed.emplace(uintptr_t(ep));
-            }
+            ret = ep->callback(ev, destroyed);
+            if (ret == Event::CAUTION) need_skip = true;
         }
     }
     return 0;

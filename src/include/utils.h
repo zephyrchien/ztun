@@ -5,12 +5,14 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <unordered_set>
 #include <utility>
 #include <fstream>
 #include <algorithm> 
 #include <functional> 
 #include <locale>
 #include <cctype>
+#include <cstdint>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <memory.h>
@@ -22,7 +24,9 @@ using std::string;
 using std::stringstream;
 using std::vector;
 using std::pair;
+using std::unordered_set;
 using std::ifstream;
+
 
 const static int SALEN = sizeof(sockaddr_in);
 class Event;
@@ -39,6 +43,7 @@ typedef std::shared_ptr<sockaddr_in> SharedSA;
 typedef std::unique_ptr<sockaddr_in> OwnedSA;
 typedef std::vector<Config> Configs;
 typedef std::vector<Listener> Listeners;
+typedef std::unordered_set<uintptr_t> PtrSet;
 
 string& trim_space_left(string&);
 string& trim_space_right(string&);

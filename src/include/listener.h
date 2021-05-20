@@ -14,7 +14,7 @@
 class Listener : public Endpoint
 {
     private:
-        const int lfd_;
+        const int fd_;
         const static int backlog_ = 64;
         const SharedSA rsa_;
 
@@ -22,7 +22,7 @@ class Listener : public Endpoint
         explicit Listener(const SharedEvent, const SharedSA, const int);
         explicit Listener(const SharedEvent, const SharedSA, const OwnedSA);
         ~Listener() override;
-        int callback(uint32_t) override;
+        int callback(uint32_t, PtrSet&) override;
         int on_accept();
         int inner_fd() const;
 };
