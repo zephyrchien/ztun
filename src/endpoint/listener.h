@@ -5,10 +5,9 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <memory.h>
-#include "event.h"
-#include "endpoint.h"
-#include "connector.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "event/event.h"
+#include "endpoint/connector.h"
 
 
 class Listener : public Endpoint

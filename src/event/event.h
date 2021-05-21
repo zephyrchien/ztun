@@ -7,8 +7,8 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <cstdint>
-#include "endpoint.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "endpoint/endpoint.h"
 
 
 class Event

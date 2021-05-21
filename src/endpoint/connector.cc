@@ -2,7 +2,7 @@
 
 
 Connector::Connector(const SharedEvent event, const int rfd, const int lfd):
-    Endpoint(event), rfd_(rfd), lfd_(lfd) { }
+    Endpoint(event), lfd_(lfd), rfd_(rfd) { }
 
 Connector::Connector(const SharedEvent event, const SharedSA rsa, const int lfd):
     Endpoint(event), lfd_(lfd), rfd_(socket(AF_INET, SOCK_STREAM, 0))

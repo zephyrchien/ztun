@@ -1,15 +1,13 @@
 #include <iostream>
-
-#include <iostream>
 #include <vector>
 #include <unistd.h>
 #include <signal.h>
-#include "event.h"
-#include "endpoint.h"
-#include "listener.h"
-#include "readwriter.h"
-#include "utils.h"
-#include "config.h"
+#include "utils/utils.h"
+#include "utils/config.h"
+#include "event/event.h"
+#include "endpoint/endpoint.h"
+#include "endpoint/listener.h"
+
 
 using std::vector;
 const static string version = "v0.1.0";

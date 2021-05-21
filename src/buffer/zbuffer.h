@@ -3,8 +3,8 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include "buffer.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "buffer/buffer.h"
 
 
 class ZBuffer : public Buffer

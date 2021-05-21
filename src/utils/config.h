@@ -12,7 +12,7 @@ class Config
         const int remote_port;
         const string local_addr;
         const string remote_addr;
-        Config(const string, const int, const string, const int);
+        Config(const string&, const int, const string&, const int);
         ~Config();
 };
 

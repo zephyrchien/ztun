@@ -92,7 +92,7 @@ int ReadWriter::on_read()
 int ReadWriter::on_write()
 {
     int to_write = 0;
-    int n = wbuf_->write(wfd_, to_write);
+    int n __attribute((unused)) = wbuf_->write(wfd_, to_write);
 
     if (errno == EWOULDBLOCK || errno == EAGAIN)
     {

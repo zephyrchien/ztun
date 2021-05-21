@@ -3,8 +3,8 @@
 
 #include <array>
 #include <memory>
-#include "buffer.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "buffer/buffer.h"
 
 
 class RingBuffer : public Buffer

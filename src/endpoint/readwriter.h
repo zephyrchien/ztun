@@ -5,10 +5,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <cerrno>
-#include "event.h"
-#include "ringbuffer.h"
-#include "endpoint.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "event/event.h"
+#include "buffer/ringbuffer.h"
 
 
 class ReadWriter : public Endpoint

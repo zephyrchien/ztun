@@ -2,10 +2,10 @@
 
 
 Listener::Listener(const SharedEvent event, const SharedSA rsa, const int fd):
-    Endpoint(event), rsa_(rsa), fd_(fd) { }
+    Endpoint(event), fd_(fd), rsa_(rsa) { }
 
 Listener::Listener(const SharedEvent event, const SharedSA rsa, const OwnedSA lsa):
-    Endpoint(event), rsa_(rsa), fd_(socket(AF_INET, SOCK_STREAM, 0))
+    Endpoint(event), fd_(socket(AF_INET, SOCK_STREAM, 0)), rsa_(rsa)
 {
     set_reuseaddr(fd_);
     set_nonblocking(fd_);

@@ -4,7 +4,7 @@
 ZBuffer::ZBuffer(): Buffer(), offset(0)
 {
     int rw_pipe[2];
-    int _ = pipe2(rw_pipe, O_NONBLOCK);
+    int ret __attribute__((unused)) = pipe2(rw_pipe, O_NONBLOCK);
     rfd = rw_pipe[0];
     wfd = rw_pipe[1];
 }

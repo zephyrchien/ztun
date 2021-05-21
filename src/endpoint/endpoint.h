@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include "event.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "event/event.h"
 
 
 class Endpoint

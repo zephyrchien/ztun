@@ -102,7 +102,7 @@ string trim_space_copy(string s)
 
 int split_addr_port(const string& s, pair<string, int>& res)
 {
-    int pos = s.find_last_of(':');
+    auto pos = s.find_last_of(':');
     if (pos == std::string::npos) return -1;
     try {
         res.second = std::stoi(s.substr(pos + 1));
@@ -118,7 +118,7 @@ int split_addr_port(const string& s, pair<string, int>& res)
 
 int split_key_value(const string& s, pair<string, string>& res)
 {
-    int pos = s.find('=');
+    auto pos = s.find('=');
     if (pos == std::string::npos) return -1;
     res.first = trim_space_copy(s.substr(0, pos));
     res.second = trim_space_copy(s.substr(pos + 1));

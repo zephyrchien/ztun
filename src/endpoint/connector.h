@@ -7,12 +7,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <memory.h>
-#include "event.h"
-#include "ringbuffer.h"
-#include "zbuffer.h"
-#include "endpoint.h"
-#include "readwriter.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "event/event.h"
+#include "buffer/ringbuffer.h"
+#include "buffer/zbuffer.h"
+#include "endpoint/readwriter.h"
 
 
 class Connector : public Endpoint
