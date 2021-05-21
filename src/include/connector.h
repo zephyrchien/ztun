@@ -26,7 +26,7 @@ class Connector : public Endpoint
         explicit Connector(const SharedEvent, const SharedSA, const int);
         ~Connector() override;
         int inner_fd() const;
-        int callback(uint32_t, PtrSet&) override;
+        int callback(uint32_t) override;
         int on_connect();
 };
 

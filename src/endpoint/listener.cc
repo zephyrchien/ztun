@@ -53,7 +53,7 @@ int Listener::on_accept()
     return Event::ERR;
 }
 
-int Listener::callback(uint32_t events, PtrSet& destroyed)
+int Listener::callback(uint32_t events)
 {
     if (events & EPOLLIN) return on_accept();
     return Event::ERR;

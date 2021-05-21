@@ -18,7 +18,7 @@ class Endpoint
     public:
         explicit Endpoint(const SharedEvent);
         virtual ~Endpoint();
-        virtual int callback(uint32_t, PtrSet&) = 0;
+        virtual int callback(uint32_t) = 0;
         SharedEvent inner_event() const;
 };
 

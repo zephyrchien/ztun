@@ -22,7 +22,7 @@ class Listener : public Endpoint
         explicit Listener(const SharedEvent, const SharedSA, const int);
         explicit Listener(const SharedEvent, const SharedSA, const OwnedSA);
         ~Listener() override;
-        int callback(uint32_t, PtrSet&) override;
+        int callback(uint32_t) override;
         int on_accept();
         int inner_fd() const;
 };

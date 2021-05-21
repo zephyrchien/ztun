@@ -13,7 +13,7 @@ Connector::Connector(const SharedEvent event, const SharedSA rsa, const int lfd)
 
 Connector::~Connector() { }
 
-int Connector::callback(uint32_t events, PtrSet& destroyed)
+int Connector::callback(uint32_t events)
 {
     if (events & EPOLLOUT) return on_connect();
     return Event::ERR;

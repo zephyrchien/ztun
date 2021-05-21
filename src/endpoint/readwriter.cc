@@ -44,14 +44,14 @@ void ReadWriter::set_another(ReadWriter* another)
 }
 
 
-int ReadWriter::callback(uint32_t events, PtrSet& destroyed)
+int ReadWriter::callback(uint32_t events)
 {
-    if (events & EPOLLIN) return on_read(destroyed);
-    if (events & EPOLLOUT) return on_write(destroyed);
+    if (events & EPOLLIN) return on_read();
+    if (events & EPOLLOUT) return on_write();
     return Event::ERR;
 }
 
-int ReadWriter::on_read(PtrSet& destroyed)
+int ReadWriter::on_read()
 {
     int to_read = 0;
     int n = rbuf_->read(rfd_, to_read);
@@ -59,12 +59,12 @@ int ReadWriter::on_read(PtrSet& destroyed)
     if (errno == EWOULDBLOCK || errno == EAGAIN)
     {
         errno = 0;
-        int ret = another_->on_write(destroyed);
+        int ret = another_->on_write();
         return ret;
     }
     if (to_read == 0)
     {
-        int ret = another_->on_write(destroyed);
+        int ret = another_->on_write();
         if (ret == Event::OK)
             event_->mod(rfd_, EPOLLIN|EPOLLET, this);
         return ret;
@@ -74,22 +74,22 @@ int ReadWriter::on_read(PtrSet& destroyed)
     {
         rbuf_->done = true;
         another_->set_another(nullptr);
-        another_->on_write(destroyed);
-        destroyed.emplace(uintptr_t(this));
+        another_->on_write();
+        event_->ptrset_.emplace(uintptr_t(this));
         delete this;
         return Event::CAUTION;
     }
 
     // unexpected error
     errno = 0;
-    destroyed.emplace(uintptr_t(this));
-    destroyed.emplace(uintptr_t(another_));
+    event_->ptrset_.emplace(uintptr_t(this));
+    event_->ptrset_.emplace(uintptr_t(another_));
     delete another_;
     delete this;
     return Event::CAUTION;
 }
 
-int ReadWriter::on_write(PtrSet& destroyed)
+int ReadWriter::on_write()
 {
     int to_write = 0;
     int n = wbuf_->write(wfd_, to_write);
@@ -105,15 +105,15 @@ int ReadWriter::on_write(PtrSet& destroyed)
     {
         if (wbuf_->done)
         {
-            destroyed.emplace(uintptr_t(this));
+            event_->ptrset_.emplace(uintptr_t(this));
             delete this;
             return Event::CAUTION;
         }
         return Event::OK;
     }
     errno = 0;
-    destroyed.emplace(uintptr_t(this));
-    destroyed.emplace(uintptr_t(another_));
+    event_->ptrset_.emplace(uintptr_t(this));
+    event_->ptrset_.emplace(uintptr_t(another_));
     delete another_;
     delete this;
     return Event::CAUTION;
