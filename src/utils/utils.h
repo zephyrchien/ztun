@@ -26,6 +26,8 @@ using std::vector;
 using std::pair;
 using std::unordered_set;
 using std::ifstream;
+using std::shared_ptr;
+using std::unique_ptr;
 
 
 const static int SALEN = sizeof(sockaddr_in);
@@ -34,17 +36,20 @@ class Buffer;
 class ZBuffer;
 class RingBuffer;
 class Config;
+class Log;
 class Endpoint;
 class Listener;
 class ReadWriter;
-typedef std::shared_ptr<Event> SharedEvent;
-typedef std::shared_ptr<Buffer> SharedBuffer;
-typedef std::unique_ptr<Buffer> OwnedBuffer;
-typedef std::shared_ptr<sockaddr_in> SharedSA;
-typedef std::unique_ptr<sockaddr_in> OwnedSA;
-typedef std::vector<Config> Configs;
-typedef std::vector<Listener> Listeners;
-typedef std::unordered_set<uintptr_t> PtrSet;
+typedef shared_ptr<Event> SharedEvent;
+typedef shared_ptr<Buffer> SharedBuffer;
+typedef unique_ptr<Buffer> OwnedBuffer;
+typedef unique_ptr<RingBuffer> OwnedRingBuffer;
+typedef shared_ptr<sockaddr_in> SharedSA;
+typedef unique_ptr<sockaddr_in> OwnedSA;
+typedef vector<Config> Configs;
+typedef vector<Listener> Listeners;
+typedef unordered_set<uintptr_t> PtrSet;
+typedef unique_ptr<Log> OwnedLogger;
 
 string& trim_space_left(string&);
 string& trim_space_right(string&);

@@ -54,7 +54,7 @@ int ReadWriter::callback(uint32_t events)
 int ReadWriter::on_read()
 {
     int to_read = 0;
-    int n = rbuf_->read(rfd_, to_read);
+    int n = rbuf_->xread(rfd_, to_read);
     
     if (errno == EWOULDBLOCK || errno == EAGAIN)
     {
@@ -92,7 +92,7 @@ int ReadWriter::on_read()
 int ReadWriter::on_write()
 {
     int to_write = 0;
-    int n __attribute((unused)) = wbuf_->write(wfd_, to_write);
+    int n __attribute((unused)) = wbuf_->xwrite(wfd_, to_write);
 
     if (errno == EWOULDBLOCK || errno == EAGAIN)
     {

@@ -28,23 +28,23 @@ RingBuffer::~RingBuffer()
     delete[] data;
 }
 
-void* RingBuffer::r_cursor()
+char* RingBuffer::r_cursor()
 {
-    return data + r_offset;
+    return static_cast<char*>(data + r_offset);
 }
 
-void *RingBuffer::w_cursor()
+char *RingBuffer::w_cursor()
 {
-    return data + w_offset;
+    return static_cast<char*>(data + w_offset);
 }
 
-int RingBuffer::read(const int fd, int& to_read)
+int RingBuffer::xread(const int fd, int& to_read)
 {
     to_read = ov ? (w_offset - r_offset) : (size - r_offset);
     int n = 0;
     while(to_read > 0)
     {
-        n = recv(fd, data + r_offset, to_read, 0);
+        n = read(fd, static_cast<char*>(data + r_offset), to_read);
         if (n <= 0) break;
         this->r_offset += n;
         to_read -= n;
@@ -58,13 +58,13 @@ int RingBuffer::read(const int fd, int& to_read)
     return n;
 }
 
-int RingBuffer::write(const int fd, int& to_write)
+int RingBuffer::xwrite(const int fd, int& to_write)
 {
     to_write = ov ? (size - w_offset) : (r_offset - w_offset);
     int n = 0;
     while (to_write > 0)
     {
-        n = send(fd, data + w_offset, to_write, 0);
+        n = write(fd, static_cast<char*>(data + w_offset), to_write);
         if (n <= 0) break;
         this->w_offset += n;
         to_write -= n;
@@ -76,4 +76,22 @@ int RingBuffer::write(const int fd, int& to_write)
         }
     }
     return n;
+}
+
+int RingBuffer::xread(const char *buf, int n)
+{
+    int to_read = ov ? (w_offset - r_offset) : (size - r_offset);
+    if (to_read >= n)
+    {
+        std::copy_n(buf, n, static_cast<char*>(data + r_offset));
+        this->r_offset += n;
+    }else if (!ov && (size - r_offset + w_offset) >= n)
+    {
+        std::copy_n(buf, to_read, static_cast<char*>(data + r_offset));
+        this->ov = true;
+        this->r_offset = 0;
+        std::copy_n(buf + n, n - to_read, static_cast<char*>(data + r_offset));
+        this->r_offset += n;
+    }else return -1;
+    return 0;
 }

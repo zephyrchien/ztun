@@ -17,8 +17,8 @@ class ZBuffer : public Buffer
 
         explicit ZBuffer();
         ~ZBuffer() override; 
-        int read(const int, int&) override;
-        int write(const int, int&) override;
+        int xread(const int, int&) override;
+        int xwrite(const int, int&) override;
 };
 
 #endif

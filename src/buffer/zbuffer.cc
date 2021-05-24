@@ -15,7 +15,7 @@ ZBuffer::~ZBuffer()
     close(wfd);
 }
 
-int ZBuffer::read(const int fd, int& to_read)
+int ZBuffer::xread(const int fd, int& to_read)
 {
     int n = 0;
     to_read = size - offset;
@@ -30,7 +30,7 @@ int ZBuffer::read(const int fd, int& to_read)
     return n;
 }
 
-int ZBuffer::write(const int fd, int& to_write)
+int ZBuffer::xwrite(const int fd, int& to_write)
 {
     int n = 0;
     to_write = offset;

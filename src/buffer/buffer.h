@@ -13,8 +13,8 @@ class Buffer
         explicit Buffer();
         virtual ~Buffer();
         bool is_done();
-        virtual int read(const int, int&) = 0;
-        virtual int write(const int, int&) = 0;
+        virtual int xread(const int, int&) = 0;
+        virtual int xwrite(const int, int&) = 0;
 };
 
 typedef std::shared_ptr<Buffer> SharedBuffer;
