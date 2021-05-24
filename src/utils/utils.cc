@@ -47,7 +47,8 @@ sockaddr_in* to_sockaddr(const char* addr, const int port)
     memset(sa, 0, SALEN);
     sa->sin_family = AF_INET;
     sa->sin_port = htons(port);
-    inet_pton(AF_INET, addr, &sa->sin_addr);
+    if (inet_pton(AF_INET, addr, &sa->sin_addr) <= 0)
+        return nullptr;
     return sa;
 }
 
@@ -118,70 +119,25 @@ int split_addr_port(const string& s, pair<string, int>& res)
 
 int split_key_value(const string& s, pair<string, string>& res)
 {
-    auto pos = s.find('=');
+    auto pos = s.find_first_of('=');
     if (pos == std::string::npos) return -1;
     res.first = trim_space_copy(s.substr(0, pos));
-    res.second = trim_space_copy(s.substr(pos + 1));
+    string second = trim_space_copy(s.substr(pos + 1));
+    // trim comment start with #
+    pos = second.find_first_of('#');
+    if (pos == std::string::npos) 
+        res.second = std::move(second);
+    else
+        res.second = second.substr(0, pos);
     return 0;
 }
 
-int read_config(Configs& configs, const string& file)
+LOG_LEVEL to_level(const string& s)
 {
-    ifstream fp(file);
-    if (fp.bad()) return -1;
-    int n = 0;
-    bool with_local = false, with_remote = false;
-    string line;
-    pair<string, string> kv;
-    pair<string, int> local, remote;
-    while(!fp.eof())
-    {
-        ++n;
-        std::getline(fp, line);
-        trim_space(line);
-        if (line.empty() || line.at(0) == '#') continue;
-        // collect a pair of local & remote
-        if (split_key_value(line, kv) < 0) return n;
-        if (!with_local && !with_remote)
-        {
-            if (kv.first == "local" && split_addr_port(kv.second,local) != -1)
-                with_local = true;
-            else if(kv.first == "remote" && split_addr_port(kv.second,remote) != -1)
-                with_remote = true;
-            else
-                return n;
-        } else if (with_local && !with_remote)
-        {
-            if (kv.first != "remote") return n;
-            if (split_addr_port(kv.second, remote) < 0) return n;
-            with_remote = true;
-        } else if (!with_local && with_remote)
-        {
-            if (kv.first != "local") return n;
-            if (split_addr_port(kv.second, local) < 0) return n;
-            with_local = true;
-        }
-        // consume this pair
-        if (with_local && with_remote)
-        {
-            configs.emplace_back(Config(
-                std::move(local.first), local.second,
-                std::move(remote.first), remote.second
-            ));
-            with_local = with_remote = false;
-        }
-    }
-    return 0;
-}
-
-int read_config(Configs& configs, const string& local_s, const string& remote_s)
-{
-    pair<string, int> local, remote;
-    if (split_addr_port(local_s, local) < 0) return -1;
-    if (split_addr_port(remote_s, remote) < 0) return -1;
-    configs.emplace_back(Config(
-        std::move(local.first), local.second,
-        std::move(remote.first), remote.second
-    ));
-    return 0;
+    LOG_LEVEL level = LOG_LEVEL::INFO;
+    if (s == "debug") level = LOG_LEVEL::DEBUG;
+    else if (s == "info") level = LOG_LEVEL::INFO;
+    else if (s == "warn") level = LOG_LEVEL::WARN;
+    else if (s == "none") level = LOG_LEVEL::NONE;
+    return level;
 }

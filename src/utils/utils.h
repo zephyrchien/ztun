@@ -7,7 +7,6 @@
 #include <vector>
 #include <unordered_set>
 #include <utility>
-#include <fstream>
 #include <algorithm> 
 #include <functional> 
 #include <locale>
@@ -25,11 +24,11 @@ using std::stringstream;
 using std::vector;
 using std::pair;
 using std::unordered_set;
-using std::ifstream;
 using std::shared_ptr;
 using std::unique_ptr;
 
-
+enum LOG_LEVEL { NONE, WARN, INFO, DEBUG };
+enum LOG_BUF_LINE { LNONE, LWARN = 2, LINFO = 5, LDEBUG = 10};
 const static int SALEN = sizeof(sockaddr_in);
 class Event;
 class Buffer;
@@ -56,8 +55,6 @@ string& trim_space_right(string&);
 string& trim_space(string&);
 string trim_space_copy(string);
 
-int read_config(Configs&, const string&);
-int read_config(Configs&, const string&, const string&);
 int split_addr_port(const string&, pair<string, int>&);
 int split_key_value(const string&, pair<string, string>&);
 
@@ -70,5 +67,6 @@ sockaddr_in* to_sockaddr(const int);
 sockaddr_in* to_sockaddr(const char*, const int);
 sockaddr_in* to_sockaddr(const string&, const int);
 const string to_string(const sockaddr_in*);
+LOG_LEVEL to_level(const string&);
 
 #endif

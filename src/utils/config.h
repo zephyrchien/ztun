@@ -2,18 +2,40 @@
 #define CONFIG_H_
 
 #include <string>
+#include <vector>
+#include <utility>
+#include <fstream>
+#include "utils.h"
+
 
 using std::string;
+using std::vector;
+using std::pair;
+using std::ifstream;
 
-class Config
+struct EndpointConfig
 {
-    public:
-        const int local_port;
-        const int remote_port;
-        const string local_addr;
-        const string remote_addr;
-        Config(const string&, const int, const string&, const int);
-        ~Config();
+    int local_port;
+    int remote_port;
+    string local_addr;
+    string remote_addr;
+    EndpointConfig(const int, const int, const string, const string);
+    ~EndpointConfig();
+};
+
+struct Config
+{
+    // global config
+    string log_level;
+    string log_file;
+
+    // endpoint config
+    vector<EndpointConfig> ep_vec;
+
+    // func
+    int from_cmd(string&, string&);
+    int from_file(string&);
+    int parse_global_conf(pair<string, string>&);
 };
 
 #endif

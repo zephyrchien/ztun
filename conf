@@ -2,10 +2,16 @@
 # assign tunnel with a pair of local & remote
 # examples below
 
-# full version
+# set log level and output path
+# level = none|warn|info|debug, default is info
+# file = filename, default is stderr
+log_level = debug
+log_file = ztun.log
+
+# full addr
 local = 127.0.0.1:15000
 remote = 127.0.0.1:20000
 
 # use default addr(0.0.0.0)
-#local = :20000
-#remote = 127.0.0.1:30000
+local = :25000
+remote = 127.0.0.1:30000

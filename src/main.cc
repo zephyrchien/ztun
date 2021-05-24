@@ -2,6 +2,8 @@
 #include <vector>
 #include <unistd.h>
 #include <signal.h>
+#include "log/log.h"
+#include "log/log.cc"
 #include "utils/utils.h"
 #include "utils/config.h"
 #include "event/event.h"
@@ -16,11 +18,8 @@ const static string usage =
     "[-c <config>] "
     "[-l <local_s>] [-r <remote_s>]";
 
-int main(int argc, char **argv)
+int read_config(int argc, char **argv, Config* config)
 {
-    // ignore SIGPIPE when write to a closed socket
-    signal(SIGPIPE, SIG_IGN);
-
     opterr = 0;
     int opt;
     string local_s, remote_s, config_file;
@@ -30,7 +29,7 @@ int main(int argc, char **argv)
         {
             case 'v':
                 std::cout << "ztun version: " << version << std::endl;
-                return 0;
+                exit(0);
             case 'l':
                 local_s = optarg;
                 break;
@@ -41,47 +40,86 @@ int main(int argc, char **argv)
                 config_file = optarg;
                 break;
             default:
-                std::cerr << usage << std::endl;
-                return 1;
+                return -1;
         }
     }
-    vector<Config> configs;
+
     int ret;
     if (!config_file.empty())
-        ret = read_config(configs, config_file);
+        ret = config->from_file(config_file);
     else if(!remote_s.empty() && !local_s.empty())
-        ret = read_config(configs, local_s, remote_s);
+        ret = config->from_cmd(local_s, remote_s);
     else ret = -1;
+    return ret;
+}
+
+int init_logger(Config* config)
+{
+    int ret;
+    auto level = static_cast<Log::LEVEL>(to_level(config->log_level));
+    if (!config->log_file.empty())
+        ret = Log::init(level, config->log_file.c_str());
+    else
+        ret = Log::init(level, STDERR_FILENO);
+    return ret;
+}
+
+int main(int argc, char **argv)
+{
+    // ignore SIGPIPE when write to a closed socket
+    signal(SIGPIPE, SIG_IGN);
+    int ret = 0;
+    auto config = new Config();
+
+    // load config from cmd or file
+    ret = read_config(argc, argv, config);
     if (ret < 0)
     {
-        std::cerr << "unexpected error" << std::endl;
         std::cerr << usage << std::endl;
+        delete config;
         return 1;
     }else if (ret > 0)
     {
-        std::cerr << "config: line " << ret << std::endl;
+        std::cerr << "error in config file: line " << ret << std::endl;
+        delete config;
         return 1;
     }
 
+    // init logger
+    ret = init_logger(config);
+    if (ret < 0)
+    {
+        std::cerr << "failed to init logger" << std::endl;
+        delete config;
+        return 1;
+    }
+
+    // init event & endpoints
     auto event = std::make_shared<Event>();
     vector<Listener> listeners;
-    listeners.reserve((configs.size()));
-    for (const auto& c: configs)
+    listeners.reserve((config->ep_vec.size()));
+    for (const auto& c: config->ep_vec)
     {
-        std::cout << 
+        std::cerr << "init " <<
             c.local_addr << ":" << c.local_port
             << " -> " <<
             c.remote_addr << ":" << c.remote_port
         << std::endl;
-        auto lsa = OwnedSA(to_sockaddr(c.local_addr, c.local_port));
-        auto rsa = SharedSA(to_sockaddr(c.remote_addr, c.remote_port));
-        listeners.emplace_back(event, rsa, std::move(lsa));
+        auto raw_lsa = to_sockaddr(c.local_addr, c.local_port);
+        auto raw_rsa = to_sockaddr(c.remote_addr, c.remote_port);
+        if (raw_lsa == nullptr || raw_rsa == nullptr)
+        {
+            std::cerr << "failed, quit" << std::endl;
+            delete config;
+            return 1;
+        }
+        listeners.emplace_back(event, SharedSA(raw_rsa), OwnedSA(raw_lsa));
     }
+    delete config;
+    // start process
     for (const auto& lis: listeners)
     {
         event->add(lis.inner_fd(), EPOLLIN|EPOLLET, &lis);
     }
-    configs.clear();
-    configs.shrink_to_fit();
     event->run();
 }
