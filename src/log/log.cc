@@ -1,5 +1,3 @@
-#ifndef LOG_SOURCE_
-#define LOG_SOURCE_
 #include "log.h"
 
 
@@ -90,4 +88,6 @@ void Log::warn(const char* fmt, Args ...args)
     return log(LEVEL::WARN, BUF_LINE::LWARN, "warn", fmt, args...);
 }
 
-#endif
+// force template install
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*);
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*, const char*);

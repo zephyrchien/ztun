@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <memory.h>
+#include "log/log.h"
 #include "utils/utils.h"
 #include "event/event.h"
 #include "buffer/ringbuffer.h"

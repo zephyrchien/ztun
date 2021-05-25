@@ -11,15 +11,15 @@
 
 namespace chrono = std::chrono;
 
-#define DEBUG(fmt, ...) Log::instance()->log(\
+#define DEBUG(...) Log::instance()->log(\
     Log::LEVEL::DEBUG, Log::BUF_LINE::LDEBUG, \
-    "debug", fmt, __VA_ARGS__)
-#define INFO(fmt, ...) Log::instance()->log(\
+    "debug", __VA_ARGS__)
+#define INFO(...) Log::instance()->log(\
     Log::LEVEL::INFO, Log::BUF_LINE::LINFO, \
-    "info", fmt, __VA_ARGS__)
-#define WARN(fmt, ...) Log::instance()->log(\
+    "info", __VA_ARGS__)
+#define WARN(...) Log::instance()->log(\
     Log::LEVEL::WARN, Log::BUF_LINE::LWARN, \
-    "warn", fmt, __VA_ARGS__)
+    "warn", __VA_ARGS__)
 
 class Log
 {

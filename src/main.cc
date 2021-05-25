@@ -1,9 +1,9 @@
 #include <iostream>
 #include <vector>
+#include <stdexcept>
 #include <unistd.h>
 #include <signal.h>
 #include "log/log.h"
-#include "log/log.cc"
 #include "utils/utils.h"
 #include "utils/config.h"
 #include "event/event.h"
@@ -12,6 +12,7 @@
 
 
 using std::vector;
+using std::exception;
 const static string version = "v0.1.0";
 const static string usage = 
     "usage: ztun [-v] "
@@ -109,11 +110,17 @@ int main(int argc, char **argv)
         auto raw_rsa = to_sockaddr(c.remote_addr, c.remote_port);
         if (raw_lsa == nullptr || raw_rsa == nullptr)
         {
-            std::cerr << "failed, quit" << std::endl;
+            std::cerr << "invalid addr, quit" << std::endl;
             delete config;
             return 1;
         }
-        listeners.emplace_back(event, SharedSA(raw_rsa), OwnedSA(raw_lsa));
+        try {
+            listeners.emplace_back(event, SharedSA(raw_rsa), OwnedSA(raw_lsa));
+        } catch (exception& e) {
+            std::cerr << e.what() << std::endl;
+            delete config;
+            return 1;
+        }
     }
     delete config;
     // start process

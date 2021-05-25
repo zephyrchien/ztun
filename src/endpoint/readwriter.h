@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <cerrno>
+#include "log/log.h"
 #include "utils/utils.h"
 #include "event/event.h"
 #include "buffer/ringbuffer.h"

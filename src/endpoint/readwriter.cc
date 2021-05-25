@@ -16,6 +16,8 @@ ReadWriter::~ReadWriter()
 {
     event_->del(rfd_);
     event_->del(wfd_);
+    close(rfd_);
+    close(wfd_);
 }
 
 int ReadWriter::inner_rfd() const
@@ -53,17 +55,21 @@ int ReadWriter::callback(uint32_t events)
 
 int ReadWriter::on_read()
 {
+    DEBUG("reader: on read\n");
+
     int to_read = 0;
     int n = rbuf_->xread(rfd_, to_read);
     
     if (errno == EWOULDBLOCK || errno == EAGAIN)
     {
+        DEBUG("reader: socket would block\n");
         errno = 0;
         int ret = another_->on_write();
         return ret;
     }
     if (to_read == 0)
     {
+        DEBUG("reader: buffer is full\n");
         int ret = another_->on_write();
         if (ret == Event::OK)
             event_->mod(rfd_, EPOLLIN|EPOLLET, this);
@@ -72,18 +78,22 @@ int ReadWriter::on_read()
     // EOF
     if (n == 0)
     {
+        DEBUG("reader: EOF, socket is closed\n");
         rbuf_->done = true;
         another_->set_another(nullptr);
         another_->on_write();
-        event_->ptrset_.emplace(uintptr_t(this));
+        event_->ptrset_.emplace(reinterpret_cast<uintptr_t>(this));
+        DEBUG("reader: delete reader, add to ptrset\n");
         delete this;
         return Event::CAUTION;
     }
 
     // unexpected error
+    WARN("reader: failed, %s", const_cast<const char*>(strerror(errno)));
     errno = 0;
-    event_->ptrset_.emplace(uintptr_t(this));
-    event_->ptrset_.emplace(uintptr_t(another_));
+    event_->ptrset_.emplace(reinterpret_cast<uintptr_t>(this));
+    event_->ptrset_.emplace(reinterpret_cast<uintptr_t>(another_));
+    DEBUG("reader: delete reader and writer, add to ptrset\n");
     delete another_;
     delete this;
     return Event::CAUTION;
@@ -91,11 +101,13 @@ int ReadWriter::on_read()
 
 int ReadWriter::on_write()
 {
+    DEBUG("writer: on write\n");
     int to_write = 0;
     int n __attribute((unused)) = wbuf_->xwrite(wfd_, to_write);
 
     if (errno == EWOULDBLOCK || errno == EAGAIN)
     {
+        DEBUG("writer: socket would block\n");
         errno = 0;
         event_->mod(rfd_, EPOLLOUT|EPOLLET|EPOLLONESHOT, this);
         return Event::OK;
@@ -103,17 +115,23 @@ int ReadWriter::on_write()
     
     if (to_write == 0)
     {
+        DEBUG("writer: buffer is empty\n");
         if (wbuf_->done)
         {
+            DEBUG("writer: finished, shutdown now\n");
             event_->ptrset_.emplace(uintptr_t(this));
+            DEBUG("writer: delete writer, add to ptrset\n");
             delete this;
             return Event::CAUTION;
         }
         return Event::OK;
     }
+
+    WARN("writer: failed, %s\n", const_cast<const char*>(strerror(errno)));
     errno = 0;
     event_->ptrset_.emplace(uintptr_t(this));
     event_->ptrset_.emplace(uintptr_t(another_));
+    DEBUG("writer: delete reader and writer, add to ptrset\n");
     delete another_;
     delete this;
     return Event::CAUTION;

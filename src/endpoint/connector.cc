@@ -21,9 +21,13 @@ int Connector::callback(uint32_t events)
 
 int Connector::on_connect()
 {
+    DEBUG("connector: on connect\n");
+
     int error = get_error(rfd_);
     if (error != 0)
     {
+        WARN("connector: connect failed, %s\n", 
+            const_cast<const char*>(strerror(error)));
         event_->del(lfd_);
         event_->del(rfd_);
         close(lfd_);
@@ -31,6 +35,8 @@ int Connector::on_connect()
         delete this;
         return Event::ERR;
     }
+
+    DEBUG("connector: dup read & write fd\n");
     int lfd2 = dup_with_opt(lfd_);
     int rfd2 = dup_with_opt(rfd_);
     if (lfd2 < 0 || rfd2 < 0)
@@ -42,8 +48,11 @@ int Connector::on_connect()
         close(lfd2);
         close(rfd2);
         delete this;
+        WARN("connector: dup read & write fd failed\n");
         return Event::ERR;
     }
+
+    DEBUG("init buffer and readwriter, add event[rw]\n");
     SharedBuffer rbuf = std::make_shared<ZBuffer>();
     SharedBuffer wbuf = std::make_shared<ZBuffer>();
     ReadWriter* rw_fwd = new ReadWriter(event_, lfd_, lfd2, rbuf, wbuf);
@@ -55,5 +64,6 @@ int Connector::on_connect()
     event_->mod(rfd_, EPOLLIN|EPOLLET, rw_rev);
     event_->add(rfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_rev);
     delete this;
+    DEBUG("delete connector\n");
     return Event::OK;
 }
