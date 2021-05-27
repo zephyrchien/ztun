@@ -67,7 +67,7 @@ const string to_string(const sockaddr_in* sa)
     char addr[INET_ADDRSTRLEN];
     stringstream ss;
     ss << inet_ntop(AF_INET, &sa->sin_addr, addr, INET_ADDRSTRLEN)
-        << ":" << sa->sin_port;
+        << ":" << ntohs(sa->sin_port);
     return ss.str();
 }
 

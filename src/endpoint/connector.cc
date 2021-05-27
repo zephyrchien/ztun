@@ -4,13 +4,6 @@
 Connector::Connector(const SharedEvent event, const int rfd, const int lfd):
     Endpoint(event), lfd_(lfd), rfd_(rfd) { }
 
-Connector::Connector(const SharedEvent event, const SharedSA rsa, const int lfd):
-    Endpoint(event), lfd_(lfd), rfd_(socket(AF_INET, SOCK_STREAM, 0))
-{
-    set_nonblocking(rfd_);
-    connect(rfd_, (sockaddr *)rsa.get(), SALEN);
-}
-
 Connector::~Connector() { }
 
 int Connector::callback(uint32_t events)
@@ -21,12 +14,13 @@ int Connector::callback(uint32_t events)
 
 int Connector::on_connect()
 {
-    DEBUG("connector: on connect\n");
+    DEBUG("connector[%d-%d]: on connect\n", lfd_, rfd_);
 
     int error = get_error(rfd_);
     if (error != 0)
     {
-        WARN("connector: connect failed, %s\n", 
+        WARN("connector[%d-%d]: connect failed, %s\n", 
+            lfd_, rfd_,
             const_cast<const char*>(strerror(error)));
         event_->del(lfd_);
         event_->del(rfd_);
@@ -36,7 +30,7 @@ int Connector::on_connect()
         return Event::ERR;
     }
 
-    DEBUG("connector: dup read & write fd\n");
+    DEBUG("connector[%d-%d]: dup read & write fd\n", lfd_, rfd_);
     int lfd2 = dup_with_opt(lfd_);
     int rfd2 = dup_with_opt(rfd_);
     if (lfd2 < 0 || rfd2 < 0)
@@ -48,11 +42,12 @@ int Connector::on_connect()
         close(lfd2);
         close(rfd2);
         delete this;
-        WARN("connector: dup read & write fd failed\n");
+        WARN("connector[%d-%d]: dup read & write fd failed\n", lfd_, rfd_);
         return Event::ERR;
     }
 
-    DEBUG("init buffer and readwriter, add event[rw]\n");
+    DEBUG("connector[%d-%d]: init buffer and readwriter, add event[rw]\n",
+        lfd_, rfd_);
     SharedBuffer rbuf = std::make_shared<ZBuffer>();
     SharedBuffer wbuf = std::make_shared<ZBuffer>();
     ReadWriter* rw_fwd = new ReadWriter(event_, lfd_, lfd2, rbuf, wbuf);
@@ -60,10 +55,10 @@ int Connector::on_connect()
     rw_fwd->set_another(rw_rev);
     rw_rev->set_another(rw_fwd);
     event_->add(lfd_, EPOLLIN|EPOLLET, rw_fwd);
-    event_->add(lfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_fwd);
+    //event_->add(lfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_fwd);
     event_->mod(rfd_, EPOLLIN|EPOLLET, rw_rev);
-    event_->add(rfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_rev);
+    //event_->add(rfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_rev);
     delete this;
-    DEBUG("delete connector\n");
+    DEBUG("connector[%d-%d]: delete connector\n", lfd_, rfd_);
     return Event::OK;
 }

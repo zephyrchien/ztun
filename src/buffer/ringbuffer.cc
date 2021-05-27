@@ -90,8 +90,8 @@ int RingBuffer::xread(const char *buf, int n)
         std::copy_n(buf, to_read, static_cast<char*>(data + r_offset));
         this->ov = true;
         this->r_offset = 0;
-        std::copy_n(buf + n, n - to_read, static_cast<char*>(data + r_offset));
-        this->r_offset += n;
+        std::copy_n(buf + to_read, n - to_read, static_cast<char*>(data + r_offset));
+        this->r_offset += (n - to_read);
     }else return -1;
     return 0;
 }

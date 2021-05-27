@@ -14,6 +14,7 @@
 class ReadWriter : public Endpoint
 {
     private:
+        bool rev_, wev_;
         const int rfd_;
         const int wfd_;
         const SharedBuffer rbuf_;
@@ -23,7 +24,6 @@ class ReadWriter : public Endpoint
     public:
         explicit ReadWriter(const SharedEvent, const int, const int,
             const SharedBuffer, const SharedBuffer);
-        explicit ReadWriter(const ReadWriter&, const int, const int);
         ~ReadWriter() override;
         int inner_rfd() const;
         int inner_wfd() const;

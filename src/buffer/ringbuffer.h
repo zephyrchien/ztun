@@ -14,7 +14,7 @@ class RingBuffer : public Buffer
         bool ov;
         int r_offset;
         int w_offset;
-        const static int size = 0x10000;
+        const static int size = 0x1000;
         char* data;
 
         explicit RingBuffer();

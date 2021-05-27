@@ -10,7 +10,7 @@ Listener::Listener(const SharedEvent event, const SharedSA rsa, const OwnedSA ls
     set_reuseaddr(fd_);
     set_nonblocking(fd_);
 
-    DEBUG("listener: bind and listen %s\n", to_string(lsa.get()).c_str());
+    INFO("listener[%d]: bind and listen %s\n", fd_, to_string(lsa.get()).c_str());
     if (bind(fd_, (sockaddr *)lsa.get(), SALEN) < 0)
     {
         close(fd_);
@@ -33,47 +33,51 @@ int Listener::inner_fd() const
 
 int Listener::on_accept()
 {
-    DEBUG("listener: on accept\n");
+    DEBUG("listener[%d]: on accept\n", fd_);
 
     sockaddr_in sa;
     socklen_t len = SALEN;
-    int conn = accept(fd_, (sockaddr *)&sa, &len);
-    if (conn == -1)
+    while (true)
     {
-        WARN("listener: accept error\n");
-        return Event::OK;
-    }
-    INFO("listener: accept from %s\n",to_string(&sa).c_str());
+        int conn = accept4(fd_, (sockaddr *)&sa, &len, SOCK_NONBLOCK);
+        if (conn == -1)
+        {
+            if (errno != EAGAIN && errno != EWOULDBLOCK
+                && errno != ECONNABORTED && errno != EPROTO)
+                WARN("listener[%d]: accept error %s\n",
+                fd_, const_cast<const char*>(strerror(errno)));
+            return Event::OK;
+        }
+        INFO("listener[%d]: new connection %s -> %s\n",
+            fd_, to_string(&sa).c_str(),
+            to_string(rsa_.get()).c_str());
 
-    set_nonblocking(conn);
-    int rfd = socket(AF_INET, SOCK_STREAM, 0);
-    set_nonblocking(rfd);
-    Connector* c = new Connector(event_, rfd, conn);
+        int rfd = socket(AF_INET, SOCK_STREAM, 0);
+        set_nonblocking(rfd);
+        Connector* c = new Connector(event_, rfd, conn);
 
-    DEBUG("listener: add event[connect]\n");
-    event_->add(rfd, EPOLLOUT|EPOLLET|EPOLLONESHOT, c);
-    int ret = connect(rfd, (sockaddr *)rsa_.get(), SALEN);
-    INFO("listener: connect to %s\n",to_string(rsa_.get()).c_str());
+        DEBUG("listener[%d]: add event[connect]\n", fd_);
+        event_->add(rfd, EPOLLOUT|EPOLLET|EPOLLONESHOT, c);
+        int ret = connect(rfd, (sockaddr *)rsa_.get(), SALEN);
 
-    if (ret == 0)
-    {
-        DEBUG("listener: connect succeed immediately\n");
-        return Event::OK;
+        if (ret == 0)
+        {
+            DEBUG("listener[%d]: connect succeed immediately\n", fd_);
+            continue;
+        }
+        if (errno == EINPROGRESS)
+        {
+            DEBUG("listener[%d]: connect in progress\n", fd_);
+            continue;
+        }
+        WARN("listener[%d]: connect failed immediately, %s\n",
+            fd_, const_cast<const char*>(strerror(errno)));
+        event_->del(rfd);
+        delete c;
+        close(conn);
+        close(rfd);
     }
-    if (errno == EINPROGRESS)
-    {
-        DEBUG("listener: connect in progress\n");
-        errno = 0;
-        return Event::OK;
-    }
-    WARN("listener: connect failed immediately, %s\n", 
-        const_cast<const char*>(strerror(errno)));
-    errno = 0;
-    event_->del(rfd);
-    delete c;
-    close(conn);
-    close(rfd);
-    return Event::ERR;
+    return Event::OK;
 }
 
 int Listener::callback(uint32_t events)

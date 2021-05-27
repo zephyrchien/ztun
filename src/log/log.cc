@@ -18,7 +18,7 @@ int Log::init(LEVEL level, const int fd)
     if (fd2 < 0) return -1;
     set_nonblocking(fd2);
     Log::logger_ = OwnedLogger(new Log(fd2));
-    logger_->level_ = level;
+    logger_->level = level;
     return 0;
 }
 
@@ -27,7 +27,7 @@ int Log::init(LEVEL level, const char *file)
     int fd = open(file, O_WRONLY|O_CREAT|O_APPEND, 0664);
     if (fd < 0) return -1;
     Log::logger_ = OwnedLogger(new Log(fd));
-    logger_->level_ = level;
+    logger_->level = level;
     return 0;
 }
 
@@ -36,16 +36,12 @@ OwnedLogger& Log::instance()
     return Log::logger_;
 }
 
-void Log::set_level(LEVEL level)
-{
-    level_ = level;
-}
 
 template<typename ...Args>
 void Log::log(LEVEL level, BUF_LINE line, const char* lv,
     const char* fmt, Args ...args)
 {
-    if (level_ < level) return;
+    // if (level_ < level) return;
     const static int fmt_size = 64;
     const static int time_size = 64;
     const static int text_size = 128;
@@ -73,7 +69,7 @@ void Log::log(LEVEL level, BUF_LINE line, const char* lv,
 template<typename ...Args>
 void Log::debug(const char* fmt, Args ...args)
 {
-    return log(LEVEL::DEBUG, BUF_LINE::LDEBUG, "debug", fmt, args...);
+    return log(LEVEL::DEBUG, BUF_LINE::LDEBUG, "dbug", fmt, args...);
 }
 
 template<typename ...Args>
@@ -89,5 +85,18 @@ void Log::warn(const char* fmt, Args ...args)
 }
 
 // force template install
-template void Log::log(LEVEL, BUF_LINE, const char*, const char*);
-template void Log::log(LEVEL, BUF_LINE, const char*, const char*, const char*);
+// %d
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    int);
+// %d %d
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    int, int);
+// %d %s
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    int, const char*);
+// %d %d %s
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    int, int, const char*);
+// %d %s %s
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    int, const char*, const char*);

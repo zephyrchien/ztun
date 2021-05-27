@@ -37,7 +37,7 @@ int ZBuffer::xwrite(const int fd, int& to_write)
     while(to_write > 0)
     {
         n = splice(rfd, nullptr, fd, nullptr, to_write,
-            SPLICE_F_MOVE|SPLICE_F_NONBLOCK|SPLICE_F_MORE);
+            SPLICE_F_MOVE|SPLICE_F_NONBLOCK);
         if (n <= 0) break;
         this->offset -= n;
         to_write -= n;

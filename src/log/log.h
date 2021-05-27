@@ -11,13 +11,19 @@
 
 namespace chrono = std::chrono;
 
-#define DEBUG(...) Log::instance()->log(\
+#define DEBUG(...) \
+    if (Log::instance()->level >= Log::LEVEL::DEBUG) \
+    Log::instance()->log(\
     Log::LEVEL::DEBUG, Log::BUF_LINE::LDEBUG, \
-    "debug", __VA_ARGS__)
-#define INFO(...) Log::instance()->log(\
+    "dbug", __VA_ARGS__)
+#define INFO(...) \
+    if (Log::instance()->level >= Log::LEVEL::INFO) \
+    Log::instance()->log(\
     Log::LEVEL::INFO, Log::BUF_LINE::LINFO, \
     "info", __VA_ARGS__)
-#define WARN(...) Log::instance()->log(\
+#define WARN(...) \
+    if (Log::instance()->level >= Log::LEVEL::WARN) \
+    Log::instance()->log(\
     Log::LEVEL::WARN, Log::BUF_LINE::LWARN, \
     "warn", __VA_ARGS__)
 
@@ -25,10 +31,10 @@ class Log
 {
     public:
         enum LEVEL { NONE, WARN, INFO, DEBUG };
-        enum BUF_LINE { LNONE, LWARN = 2, LINFO = 5, LDEBUG = 10};
+        enum BUF_LINE { LNONE, LWARN = 2, LINFO = 3, LDEBUG = 5};
+        LEVEL level;
     
     private:
-        LEVEL level_;
         const int fd_;
         const OwnedRingBuffer buf_;
         int line_;
