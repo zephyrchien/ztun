@@ -19,12 +19,18 @@ ztun -c <conf> # from config file
 ## Config
 ```
 # comment, starting with #
+
 # set log level and output path
-# format:
 # level = none|warn|info|debug, default is info
 # file = filename, default is stderr
 log_level = info
 log_file = ztun.log
+
+# set operation timeout and the precision of timer
+# timer_intv = 1~2147483647 (ms), default is 500
+# connect_timeout = 1~2147483647 (ms), default is 2000
+timer_intv = 500
+connect_timeout = 2000
 
 # group1
 local = :5000

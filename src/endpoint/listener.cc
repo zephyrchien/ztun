@@ -1,6 +1,8 @@
 #include "listener.h"
 
 
+int Listener::timeout_ = DEFAULT_CONNECT_TIMEOUT;
+
 Listener::Listener(const SharedEvent event, const SharedSA rsa, const int fd):
     Endpoint(event), fd_(fd), rsa_(rsa) { }
 
@@ -24,6 +26,11 @@ Listener::Listener(const SharedEvent event, const SharedSA rsa, const OwnedSA ls
 Listener::~Listener()
 {
     close(fd_);
+}
+
+void Listener::set_timeout(const int timeout)
+{
+    timeout_ = timeout;
 }
 
 int Listener::inner_fd() const
@@ -58,6 +65,9 @@ int Listener::on_accept()
 
         DEBUG("listener[%d]: add event[connect]\n", fd_);
         event_->add(rfd, EPOLLOUT|EPOLLET|EPOLLONESHOT, c);
+        DEBUG("listener[%d]: set timeout[connect]\n", fd_);
+        Timer* t = TimeWheel::instance()->add(timeout_, c);
+        c->set_timer(t);
         int ret = connect(rfd, (sockaddr *)rsa_.get(), SALEN);
 
         if (ret == 0)
@@ -84,4 +94,9 @@ int Listener::callback(uint32_t events)
 {
     if (events & EPOLLIN) return on_accept();
     return Event::ERR;
+}
+
+int Listener::timeout()
+{
+    return 0;
 }

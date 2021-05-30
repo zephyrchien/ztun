@@ -19,6 +19,7 @@ class Endpoint
         explicit Endpoint(const SharedEvent);
         virtual ~Endpoint();
         virtual int callback(uint32_t) = 0;
+        virtual int timeout() = 0;
         SharedEvent inner_event() const;
 };
 

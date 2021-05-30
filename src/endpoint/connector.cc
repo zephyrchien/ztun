@@ -6,23 +6,39 @@ Connector::Connector(const SharedEvent event, const int rfd, const int lfd):
 
 Connector::~Connector() { }
 
+void Connector::set_timer(Timer* timer)
+{
+    timer_ = timer;
+}
+
 int Connector::callback(uint32_t events)
 {
     if (events & EPOLLOUT) return on_connect();
     return Event::ERR;
 }
 
+int Connector::timeout()
+{
+    WARN("connector[%d-%d]: connect timeout\n", lfd_, rfd_);
+    event_->del(rfd_);
+    close(lfd_);
+    close(rfd_);
+    delete this;
+    return Event::CAUTION;
+}
+
 int Connector::on_connect()
 {
     DEBUG("connector[%d-%d]: on connect\n", lfd_, rfd_);
-
+    TimeWheel::instance()->del(timer_);
+    timer_ = nullptr;
+    
     int error = get_error(rfd_);
     if (error != 0)
     {
         WARN("connector[%d-%d]: connect failed, %s\n", 
             lfd_, rfd_,
             const_cast<const char*>(strerror(error)));
-        event_->del(lfd_);
         event_->del(rfd_);
         close(lfd_);
         close(rfd_);
@@ -35,7 +51,6 @@ int Connector::on_connect()
     int rfd2 = dup_with_opt(rfd_);
     if (lfd2 < 0 || rfd2 < 0)
     {
-        event_->del(lfd_);
         event_->del(rfd_);
         close(lfd_);
         close(rfd_);

@@ -21,7 +21,7 @@ int Config::from_cmd(string& local_s, string& remote_s)
 int Config::from_file(string& file)
 {
     ifstream fp(file);
-    if (fp.bad()) return -1;
+    if (!fp.good()) return -1;
     int n = 0;
     bool with_local = false, with_remote = false;
     string line;
@@ -75,6 +75,10 @@ int Config::parse_global_conf(pair<string, string>& kv)
         this->log_level = kv.second;
     else if (kv.first == "log_file")
         this->log_file = kv.second;
+    else if (kv.first == "timer_intv")
+        this->timer_intv = kv.second;
+    else if (kv.first == "connect_timeout")
+        this->connect_timeout = kv.second;
     else return -1;
     return 0;
 }

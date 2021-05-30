@@ -7,6 +7,7 @@
 #include "utils/utils.h"
 #include "utils/config.h"
 #include "event/event.h"
+#include "timer/wheel.h"
 #include "endpoint/endpoint.h"
 #include "endpoint/listener.h"
 
@@ -65,6 +66,23 @@ int init_logger(Config* config)
     return ret;
 }
 
+int init_timer(Config* config, SharedEvent event)
+{
+    int intv, timeout;
+    try {
+        intv = std::stoi(config->timer_intv);
+        timeout = std::stoi(config->connect_timeout);
+    } catch (...) {
+        intv = timeout = -1;
+        std::cerr << 
+            "warning: bad intv|timeout, use default value"
+        << std::endl;
+    }
+    if (timeout > 0) Listener::set_timeout(timeout);
+    if (intv > 0) TimeWheel::set_intv(intv);
+    return TimeWheel::init(event);
+}
+
 int main(int argc, char **argv)
 {
     // ignore SIGPIPE when write to a closed socket
@@ -86,17 +104,24 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    // main event loop
+    auto event = std::make_shared<Event>();
+
     // init logger
-    ret = init_logger(config);
-    if (ret < 0)
+    if ((ret = init_logger(config)) < 0)
     {
         std::cerr << "failed to init logger" << std::endl;
         delete config;
         return 1;
     }
-
-    // init event & endpoints
-    auto event = std::make_shared<Event>();
+    // init timer
+    if ((ret = init_timer(config, event)) < 0)
+    {
+        std::cerr << "failed to init timer" << std::endl;
+        delete config;
+        return 1;
+    }
+    // init endpoints
     vector<Listener> listeners;
     listeners.reserve((config->ep_vec.size()));
     for (const auto& c: config->ep_vec)

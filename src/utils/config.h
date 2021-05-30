@@ -28,6 +28,8 @@ struct Config
     // global config
     string log_level;
     string log_file;
+    string timer_intv;
+    string connect_timeout;
 
     // endpoint config
     vector<EndpointConfig> ep_vec;

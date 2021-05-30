@@ -31,6 +31,7 @@ class ReadWriter : public Endpoint
         SharedBuffer inner_wbuf() const;
         void set_another(ReadWriter*);
         int callback(uint32_t) override;
+        int timeout() override;
         int on_read();
         int on_write();
 };

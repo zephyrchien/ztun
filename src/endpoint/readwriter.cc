@@ -47,6 +47,11 @@ int ReadWriter::callback(uint32_t events)
     return Event::ERR;
 }
 
+int ReadWriter::timeout()
+{
+    return 0;
+}
+
 int ReadWriter::on_read()
 {
     DEBUG("reader[%d]: on read\n", rfd_);

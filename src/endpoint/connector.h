@@ -10,6 +10,7 @@
 #include "log/log.h"
 #include "utils/utils.h"
 #include "event/event.h"
+#include "timer/wheel.h"
 #include "buffer/ringbuffer.h"
 #include "buffer/zbuffer.h"
 #include "endpoint/readwriter.h"
@@ -20,12 +21,14 @@ class Connector : public Endpoint
     private:
         const int lfd_;
         const int rfd_;
+        Timer* timer_;
     
     public:
         explicit Connector(const SharedEvent, const int, const int);
         ~Connector() override;
-        int inner_fd() const;
+        void set_timer(Timer*);
         int callback(uint32_t) override;
+        int timeout() override;
         int on_connect();
 };
 

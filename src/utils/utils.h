@@ -36,6 +36,7 @@ class ZBuffer;
 class RingBuffer;
 class Config;
 class Log;
+class TimeWheel;
 class Endpoint;
 class Listener;
 class ReadWriter;
@@ -49,6 +50,7 @@ typedef vector<Config> Configs;
 typedef vector<Listener> Listeners;
 typedef unordered_set<uintptr_t> PtrSet;
 typedef unique_ptr<Log> OwnedLogger;
+typedef unique_ptr<TimeWheel> OwnedTimer;
 
 string& trim_space_left(string&);
 string& trim_space_right(string&);
