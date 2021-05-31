@@ -24,11 +24,11 @@ class Listener : public Endpoint
 
     private:
         const int fd_;
-        const SharedSA rsa_;
+        const sockaddr_in* rsa_;
 
     public:
-        explicit Listener(const SharedEvent, const SharedSA, const int);
-        explicit Listener(const SharedEvent, const SharedSA, const OwnedSA);
+        explicit Listener(Event*, const sockaddr_in*,
+            const sockaddr_in*);
         ~Listener() override;
         static void set_timeout(const int);
 

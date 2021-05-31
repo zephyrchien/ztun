@@ -22,7 +22,7 @@ class ReadWriter : public Endpoint
         ReadWriter* another_;
 
     public:
-        explicit ReadWriter(const SharedEvent, const int, const int,
+        explicit ReadWriter(Event*, const int, const int,
             const SharedBuffer, const SharedBuffer);
         ~ReadWriter() override;
         int inner_rfd() const;

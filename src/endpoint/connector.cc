@@ -1,7 +1,7 @@
 #include "connector.h"
 
 
-Connector::Connector(const SharedEvent event, const int rfd, const int lfd):
+Connector::Connector(Event* event, const int rfd, const int lfd):
     Endpoint(event), lfd_(lfd), rfd_(rfd) { }
 
 Connector::~Connector() { }

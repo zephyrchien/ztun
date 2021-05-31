@@ -4,7 +4,7 @@
 int TimeWheel::intv_ = DEFAULT_TIMER_INTV;
 OwnedTimer TimeWheel::wheel_ = OwnedTimer(nullptr);
 
-TimeWheel::TimeWheel(const SharedEvent event, const int fd):
+TimeWheel::TimeWheel(Event* event, const int fd):
     Endpoint(event), fd_(fd), cursor_(0) { }
 
 TimeWheel::~TimeWheel()
@@ -23,7 +23,7 @@ OwnedTimer& TimeWheel::instance()
     return wheel_;
 }
 
-int TimeWheel::init(const SharedEvent event)
+int TimeWheel::init(Event* event)
 {
     int fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if (fd < 0) return -1;

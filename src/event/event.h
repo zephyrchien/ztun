@@ -25,11 +25,11 @@ class Event
     public:
         explicit Event();
         ~Event();
-        int add(int, epoll_event&);
-        int add(int, uint32_t, const Endpoint*);
-        int mod(int, epoll_event&);
-        int mod(int, uint32_t, const Endpoint*);
-        int del(int);
+        int add(int, epoll_event&) const;
+        int add(int, uint32_t, const Endpoint*) const;
+        int mod(int, epoll_event&) const;
+        int mod(int, uint32_t, const Endpoint*) const;
+        int del(int) const;
         int poll(int);
         int run();
 };

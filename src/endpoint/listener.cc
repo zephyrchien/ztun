@@ -3,17 +3,15 @@
 
 int Listener::timeout_ = DEFAULT_CONNECT_TIMEOUT;
 
-Listener::Listener(const SharedEvent event, const SharedSA rsa, const int fd):
-    Endpoint(event), fd_(fd), rsa_(rsa) { }
-
-Listener::Listener(const SharedEvent event, const SharedSA rsa, const OwnedSA lsa):
+Listener::Listener(Event* event, const sockaddr_in* rsa,
+    const sockaddr_in* lsa):
     Endpoint(event), fd_(socket(AF_INET, SOCK_STREAM, 0)), rsa_(rsa)
 {
     set_reuseaddr(fd_);
     set_nonblocking(fd_);
 
-    INFO("listener[%d]: bind and listen %s\n", fd_, to_string(lsa.get()).c_str());
-    if (bind(fd_, (sockaddr *)lsa.get(), SALEN) < 0)
+    INFO("listener[%d]: bind and listen %s\n", fd_, to_string(lsa).c_str());
+    if (bind(fd_, reinterpret_cast<const sockaddr*>(lsa), SALEN) < 0)
     {
         close(fd_);
         int e = errno;
@@ -46,7 +44,9 @@ int Listener::on_accept()
     socklen_t len = SALEN;
     while (true)
     {
-        int conn = accept4(fd_, (sockaddr *)&sa, &len, SOCK_NONBLOCK);
+        int conn = accept4(fd_,
+            reinterpret_cast<sockaddr*>(&sa),
+            &len, SOCK_NONBLOCK);
         if (conn == -1)
         {
             if (errno != EAGAIN && errno != EWOULDBLOCK
@@ -57,7 +57,7 @@ int Listener::on_accept()
         }
         INFO("listener[%d]: new connection %s -> %s\n",
             fd_, to_string(&sa).c_str(),
-            to_string(rsa_.get()).c_str());
+            to_string(rsa_).c_str());
 
         int rfd = socket(AF_INET, SOCK_STREAM, 0);
         set_nonblocking(rfd);
@@ -68,7 +68,8 @@ int Listener::on_accept()
         DEBUG("listener[%d]: set timeout[connect]\n", fd_);
         Timer* t = TimeWheel::instance()->add(timeout_, c);
         c->set_timer(t);
-        int ret = connect(rfd, (sockaddr *)rsa_.get(), SALEN);
+        int ret = connect(rfd,
+            reinterpret_cast<const sockaddr*>(rsa_), SALEN);
 
         if (ret == 0)
         {

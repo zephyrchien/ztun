@@ -11,12 +11,12 @@ Event::~Event()
     close(fd_);
 }
 
-int Event::add(int fd, epoll_event& ev)
+int Event::add(int fd, epoll_event& ev) const
 {
     return epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
 }
 
-int Event::add(int fd, uint32_t events, const Endpoint* ep)
+int Event::add(int fd, uint32_t events, const Endpoint* ep) const
 {
     epoll_event ev;
     ev.events = events;
@@ -24,12 +24,12 @@ int Event::add(int fd, uint32_t events, const Endpoint* ep)
     return epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
 }
 
-int Event::mod(int fd, epoll_event& ev)
+int Event::mod(int fd, epoll_event& ev) const
 {
     return epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
 }
 
-int Event::mod(int fd, uint32_t events, const Endpoint* ep)
+int Event::mod(int fd, uint32_t events, const Endpoint* ep) const
 {
     epoll_event ev;
     ev.events = events;
@@ -37,7 +37,7 @@ int Event::mod(int fd, uint32_t events, const Endpoint* ep)
     return epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
 }
 
-int Event::del(int fd)
+int Event::del(int fd) const
 {
     return epoll_ctl(fd_, EPOLL_CTL_DEL, fd, nullptr);
 }
@@ -72,5 +72,6 @@ int Event::run()
             if (ret == Event::CAUTION) need_skip = true;
         }
     }
+    delete this;
     return 0;
 }

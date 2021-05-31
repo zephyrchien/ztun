@@ -13,14 +13,14 @@
 class Endpoint
 {
     protected:
-        const SharedEvent event_;
+        Event* event_;
 
     public:
-        explicit Endpoint(const SharedEvent);
+        explicit Endpoint(Event*);
         virtual ~Endpoint();
         virtual int callback(uint32_t) = 0;
         virtual int timeout() = 0;
-        SharedEvent inner_event() const;
+        const Event* inner_event() const;
 };
 
 #endif

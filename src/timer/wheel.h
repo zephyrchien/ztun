@@ -22,12 +22,12 @@ class TimeWheel: public Endpoint
         std::array<Timer*, maxslot_> slots_;
 
     private:
-        explicit TimeWheel(const SharedEvent, const int);
+        explicit TimeWheel(Event*, const int);
         static OwnedTimer wheel_;
 
     public:
         ~TimeWheel();
-        static int init(const SharedEvent);
+        static int init(Event*);
         static void set_intv(const int);
         static OwnedTimer& instance();
 

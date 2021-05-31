@@ -66,7 +66,7 @@ int init_logger(Config* config)
     return ret;
 }
 
-int init_timer(Config* config, SharedEvent event)
+int init_timer(Config* config, Event* event)
 {
     int intv, timeout;
     try {
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     }
 
     // main event loop
-    auto event = std::make_shared<Event>();
+    auto event = new Event();
 
     // init logger
     if ((ret = init_logger(config)) < 0)
@@ -136,16 +136,20 @@ int main(int argc, char **argv)
         if (raw_lsa == nullptr || raw_rsa == nullptr)
         {
             std::cerr << "invalid addr, quit" << std::endl;
+            delete raw_lsa;
+            delete raw_rsa;
             delete config;
             return 1;
         }
         try {
-            listeners.emplace_back(event, SharedSA(raw_rsa), OwnedSA(raw_lsa));
+            listeners.emplace_back(event, raw_rsa, raw_lsa);
         } catch (exception& e) {
             std::cerr << e.what() << std::endl;
+            delete raw_lsa;
             delete config;
             return 1;
         }
+        delete raw_lsa;
     }
     delete config;
     // start process

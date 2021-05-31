@@ -1,7 +1,7 @@
 #include "readwriter.h"
 
 
-ReadWriter::ReadWriter(const SharedEvent event, const int rfd,
+ReadWriter::ReadWriter(Event* event, const int rfd,
     const int wfd, const SharedBuffer rbuf, const SharedBuffer wbuf):
     Endpoint(event), rev_(true), wev_(false), rfd_(rfd), wfd_(wfd),
     rbuf_(rbuf), wbuf_(wbuf), another_(nullptr) { }

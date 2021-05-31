@@ -24,7 +24,7 @@ class Connector : public Endpoint
         Timer* timer_;
     
     public:
-        explicit Connector(const SharedEvent, const int, const int);
+        explicit Connector(Event*, const int, const int);
         ~Connector() override;
         void set_timer(Timer*);
         int callback(uint32_t) override;
