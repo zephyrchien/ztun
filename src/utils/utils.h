@@ -39,6 +39,7 @@ class TimeWheel;
 class Endpoint;
 class Listener;
 class ReadWriter;
+class Resolver;
 typedef shared_ptr<Event> SharedEvent;
 typedef shared_ptr<Buffer> SharedBuffer;
 typedef unique_ptr<Buffer> OwnedBuffer;
@@ -48,6 +49,7 @@ typedef vector<Listener> Listeners;
 typedef unordered_set<uintptr_t> PtrSet;
 typedef unique_ptr<Log> OwnedLogger;
 typedef unique_ptr<TimeWheel> OwnedTimer;
+typedef unique_ptr<Resolver> OwnedResolver;
 
 string& trim_space_left(string&);
 string& trim_space_right(string&);
