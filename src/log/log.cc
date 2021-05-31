@@ -88,15 +88,24 @@ void Log::warn(const char* fmt, Args ...args)
 // %d
 template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
     int);
+// %s
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    const char*);
 // %d %d
 template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
     int, int);
 // %d %s
 template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
     int, const char*);
+// %s %s
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    const char*, const char*);
 // %d %d %s
 template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
     int, int, const char*);
 // %d %s %s
 template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
     int, const char*, const char*);
+// %s %s %s
+template void Log::log(LEVEL, BUF_LINE, const char*, const char*,
+    const char*, const char*, const char*);
