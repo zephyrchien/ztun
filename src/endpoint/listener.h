@@ -5,6 +5,7 @@
 #include <cerrno>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <netdb.h>
 #include <fcntl.h>
 #include <memory.h>
 #include "log/log.h"
@@ -24,11 +25,11 @@ class Listener : public Endpoint
 
     private:
         const int fd_;
-        const sockaddr_in* rsa_;
+        const addrinfo* hints_;
 
     public:
-        explicit Listener(Event*, const sockaddr_in*,
-            const sockaddr_in*);
+        explicit Listener(Event*, const addrinfo*,
+            const sockaddr_in6*);
         ~Listener() override;
         static void set_timeout(const int);
 

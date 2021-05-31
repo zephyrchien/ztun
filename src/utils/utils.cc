@@ -1,6 +1,12 @@
 #include "utils.h"
 
 
+int set_dualstack(const int fd)
+{
+    int opt = 0;
+    return setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
+}
+
 int set_reuseaddr(const int fd)
 {
     int opt = 1;
@@ -32,34 +38,29 @@ int dup_with_opt(const int fd)
     return fd2;
 }
 
-sockaddr_in* to_sockaddr(const int port)
+sockaddr_in6* to_sockaddr(const int port)
 {
-    sockaddr_in* sa = new sockaddr_in;
-    memset(sa, 0, SALEN);
-    sa->sin_family = AF_INET;
-    sa->sin_port = htons(port);
-    return sa;
+    sockaddr_in6* sa_in6 = new sockaddr_in6;
+    memset(sa_in6, 0, sizeof(sockaddr_in6));
+    sa_in6->sin6_family = AF_INET6;
+    sa_in6->sin6_port = htons(port);
+    return sa_in6;
 }
 
-sockaddr_in* to_sockaddr(const char* addr, const int port)
+sockaddr_in6* to_sockaddr(const char* addr, const int port)
 {
-    sockaddr_in* sa = new sockaddr_in;
-    memset(sa, 0, SALEN);
-    sa->sin_family = AF_INET;
-    sa->sin_port = htons(port);
-    if (inet_pton(AF_INET, addr, &sa->sin_addr) <= 0)
+    sockaddr_in6* sa_in6 = new sockaddr_in6;
+    memset(sa_in6, 0, sizeof(sockaddr_in6));
+    sa_in6->sin6_family = AF_INET6;
+    sa_in6->sin6_port = htons(port);
+    if (inet_pton(AF_INET6, addr, &sa_in6->sin6_addr) <= 0)
         return nullptr;
-    return sa;
+    return sa_in6;
 }
 
-sockaddr_in* to_sockaddr(const string& addr, const int port)
+sockaddr_in6* to_sockaddr(const string& addr, const int port)
 {
-    sockaddr_in* sa = new sockaddr_in;
-    memset(sa, 0, SALEN);
-    sa->sin_family = AF_INET;
-    sa->sin_port = htons(port);
-    inet_pton(AF_INET, addr.c_str(), &sa->sin_addr);
-    return sa;
+    return to_sockaddr(addr.c_str(), port);
 }
 
 const string to_string(const sockaddr_in* sa)
@@ -69,6 +70,25 @@ const string to_string(const sockaddr_in* sa)
     ss << inet_ntop(AF_INET, &sa->sin_addr, addr, INET_ADDRSTRLEN)
         << ":" << ntohs(sa->sin_port);
     return ss.str();
+}
+
+const string to_string(const sockaddr_in6* sa_in6)
+{
+    char addr[INET6_ADDRSTRLEN];
+    stringstream ss;
+    ss << inet_ntop(AF_INET6, &sa_in6->sin6_addr, addr, INET6_ADDRSTRLEN)
+        << ":" << ntohs(sa_in6->sin6_port);
+    return ss.str();
+}
+
+const string to_string(sa_family_t f, const sockaddr *sa)
+{
+    string s;
+    if (f == AF_INET)
+        s = to_string(reinterpret_cast<const sockaddr_in*>(sa));
+    else if (f == AF_INET6)
+        s = to_string(reinterpret_cast<const sockaddr_in6*>(sa));
+    return s;
 }
 
 string& trim_space_left(string& s)
@@ -111,7 +131,7 @@ int split_addr_port(const string& s, pair<string, int>& res)
         return -1;
     }
     if (pos == 0)
-        res.first = "0.0.0.0";
+        res.first = "::";
     else
         res.first = s.substr(0, pos);
     return 0;

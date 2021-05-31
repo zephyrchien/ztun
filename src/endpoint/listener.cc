@@ -3,15 +3,18 @@
 
 int Listener::timeout_ = DEFAULT_CONNECT_TIMEOUT;
 
-Listener::Listener(Event* event, const sockaddr_in* rsa,
-    const sockaddr_in* lsa):
-    Endpoint(event), fd_(socket(AF_INET, SOCK_STREAM, 0)), rsa_(rsa)
+Listener::Listener(Event* event, const addrinfo* hints,
+    const sockaddr_in6* sa_in6):
+    Endpoint(event),
+    fd_(socket(AF_INET, SOCK_STREAM, 0)), hints_(hints)
 {
     set_reuseaddr(fd_);
     set_nonblocking(fd_);
 
-    INFO("listener[%d]: bind and listen %s\n", fd_, to_string(lsa).c_str());
-    if (bind(fd_, reinterpret_cast<const sockaddr*>(lsa), SALEN) < 0)
+    INFO("listener[%d]: bind and listen %s\n",
+        fd_, to_string(sa_in6).c_str());
+    if (bind(fd_, reinterpret_cast<const sockaddr*>(sa_in6),
+        sizeof(sockaddr_in6)) < 0)
     {
         close(fd_);
         int e = errno;
@@ -40,12 +43,12 @@ int Listener::on_accept()
 {
     DEBUG("listener[%d]: on accept\n", fd_);
 
-    sockaddr_in sa;
-    socklen_t len = SALEN;
+    sockaddr_in6 sa_in6;
+    socklen_t len = sizeof(sockaddr_in6);
     while (true)
     {
         int conn = accept4(fd_,
-            reinterpret_cast<sockaddr*>(&sa),
+            reinterpret_cast<sockaddr*>(&sa_in6),
             &len, SOCK_NONBLOCK);
         if (conn == -1)
         {
@@ -56,8 +59,8 @@ int Listener::on_accept()
             return Event::OK;
         }
         INFO("listener[%d]: new connection %s -> %s\n",
-            fd_, to_string(&sa).c_str(),
-            to_string(rsa_).c_str());
+            fd_, to_string(&sa_in6).c_str(),
+            to_string(hints_->ai_family, hints_->ai_addr).c_str());
 
         int rfd = socket(AF_INET, SOCK_STREAM, 0);
         set_nonblocking(rfd);
@@ -68,8 +71,7 @@ int Listener::on_accept()
         DEBUG("listener[%d]: set timeout[connect]\n", fd_);
         Timer* t = TimeWheel::instance()->add(timeout_, c);
         c->set_timer(t);
-        int ret = connect(rfd,
-            reinterpret_cast<const sockaddr*>(rsa_), SALEN);
+        int ret = connect(rfd, hints_->ai_addr, hints_->ai_addrlen);
 
         if (ret == 0)
         {
