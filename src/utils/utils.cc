@@ -38,29 +38,44 @@ int dup_with_opt(const int fd)
     return fd2;
 }
 
-sockaddr_in6* to_sockaddr(const int port)
+sockaddr_storage* to_sockaddr(const int port)
 {
-    sockaddr_in6* sa_in6 = new sockaddr_in6;
+    auto sa_in6 = new sockaddr_in6;
     memset(sa_in6, 0, sizeof(sockaddr_in6));
     sa_in6->sin6_family = AF_INET6;
     sa_in6->sin6_port = htons(port);
-    return sa_in6;
+    return reinterpret_cast<sockaddr_storage*>(sa_in6);
 }
 
-sockaddr_in6* to_sockaddr(const char* addr, const int port)
+sockaddr_storage*
+to_sockaddr(sa_family_t& f, const char* addr, const int port)
 {
-    sockaddr_in6* sa_in6 = new sockaddr_in6;
-    memset(sa_in6, 0, sizeof(sockaddr_in6));
-    sa_in6->sin6_family = AF_INET6;
-    sa_in6->sin6_port = htons(port);
-    if (inet_pton(AF_INET6, addr, &sa_in6->sin6_addr) <= 0)
-        return nullptr;
-    return sa_in6;
+    auto ss = new sockaddr_storage;
+    memset(ss, 0, sizeof(sockaddr_storage));
+    // try ipv4
+    auto sa_in = reinterpret_cast<sockaddr_in*>(ss);
+    if (inet_pton(AF_INET, addr, &sa_in->sin_addr) == 1)
+    {
+        sa_in->sin_port = htons(port);
+        f = sa_in->sin_family = AF_INET;
+        return ss;
+    }
+    // try ipv6
+    auto sa_in6 = reinterpret_cast<sockaddr_in6*>(ss);
+    if (inet_pton(AF_INET6, addr, &sa_in6->sin6_addr) == 1)
+    {
+        sa_in6->sin6_port = htons(port);
+        f = sa_in6->sin6_family = AF_INET6;
+        return ss;
+    }
+    delete ss;
+    return nullptr;
 }
 
-sockaddr_in6* to_sockaddr(const string& addr, const int port)
+sockaddr_storage* 
+to_sockaddr(sa_family_t& f, const string& addr, const int port)
 {
-    return to_sockaddr(addr.c_str(), port);
+    return to_sockaddr(f, addr.c_str(), port);
 }
 
 const string to_string(const sockaddr_in* sa)
@@ -81,7 +96,7 @@ const string to_string(const sockaddr_in6* sa_in6)
     return ss.str();
 }
 
-const string to_string(sa_family_t f, const sockaddr *sa)
+const string to_string(const sa_family_t f, const sockaddr *sa)
 {
     string s;
     if (f == AF_INET)

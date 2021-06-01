@@ -43,12 +43,12 @@ int TimeWheel::init(Event* event)
     return 0;
 }
 
-Timer* TimeWheel::add(const int timeout, Endpoint* ep)
+Timer* TimeWheel::add(const int timeout, Endpoint* ep, const bool persist)
 {
     int ticks = (timeout < intv_) ? (1) : (timeout / intv_);
     int round = ticks / maxslot_;
     int slot = (cursor_ + ticks % maxslot_) % maxslot_;
-    Timer* t = new Timer(slot, round);
+    Timer* t = new Timer(timeout, slot, round, persist);
     t->ep = ep;
     // insert to head
     if (slots_[slot] == nullptr) 
@@ -83,8 +83,10 @@ int TimeWheel::tick()
 {
     int ret = Event::OK;
     Timer *t = slots_[cursor_];
+    Timer *tx = nullptr;
     while (t != nullptr)
     {
+        tx = t;
         if (t->round > 0)
         {
             t->round--;
@@ -97,16 +99,33 @@ int TimeWheel::tick()
         if (t == slots_[cursor_])
         {
             slots_[cursor_] = t->next;
-            delete t;
+            if (!t->persist) delete t;
             t = slots_[cursor_];
             if (t != nullptr) t->prev = nullptr;
-            continue;
+        }else
+        {
+            t->prev->next = t->next;
+            if (!t->is_tail()) t->next->prev = t->prev;
+            if (!t->persist) delete tx;
+            t = t->next;
         }
-        t->prev->next = t->next;
-        if (!t->is_tail()) t->next->prev = t->prev;
-        Timer *tx = t->next;
-        delete t;
-        t = tx;
+        // reload
+        if (tx->persist)
+        {
+            int ticks = (tx->timeout < intv_)?
+                (1) : (tx->timeout / intv_);
+            int slot = (cursor_ + ticks % maxslot_) % maxslot_;
+            tx->slot = slot;
+            tx->round = ticks / maxslot_;
+            if (slots_[slot] == nullptr) 
+                slots_[slot] = tx;
+            else
+            {
+                tx->next = slots_[slot];
+                slots_[slot]->prev = tx;
+                slots_[slot] = tx;
+            }
+        }
     }
     cursor_ = (cursor_ + 1) % maxslot_;
     return ret;

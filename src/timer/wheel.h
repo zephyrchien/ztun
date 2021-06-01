@@ -32,7 +32,7 @@ class TimeWheel: public Endpoint
         static OwnedTimer& instance();
 
     public:
-        Timer* add(const int, Endpoint*);
+        Timer* add(const int, Endpoint*, const bool = false);
         void del(const Timer*);
         int tick();
         int callback(uint32_t) override;

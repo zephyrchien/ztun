@@ -4,22 +4,19 @@
 int Listener::timeout_ = DEFAULT_CONNECT_TIMEOUT;
 
 Listener::Listener(Event* event, const addrinfo* hints,
-    const sockaddr_in6* sa_in6):
-    Endpoint(event),
-    fd_(socket(AF_INET, SOCK_STREAM, 0)), hints_(hints)
+    const sa_family_t family, const sockaddr_storage* ss):
+    Endpoint(event), fd_(socket(family, SOCK_STREAM, 0)),
+    family_(family), hints_(hints)
 {
     set_reuseaddr(fd_);
     set_nonblocking(fd_);
-
+    auto sa = reinterpret_cast<const sockaddr*>(ss);
     INFO("listener[%d]: bind and listen %s\n",
-        fd_, to_string(sa_in6).c_str());
-    if (bind(fd_, reinterpret_cast<const sockaddr*>(sa_in6),
-        sizeof(sockaddr_in6)) < 0)
+        fd_, to_string(family_, sa).c_str());
+    if (bind(fd_, sa, sizeof(sockaddr_in6)) < 0)
     {
         close(fd_);
-        int e = errno;
-        errno = 0;
-        throw std::runtime_error(strerror(e));
+        throw std::runtime_error(strerror(errno));
     }
     listen(fd_, backlog_);
 }
@@ -27,6 +24,7 @@ Listener::Listener(Event* event, const addrinfo* hints,
 Listener::~Listener()
 {
     close(fd_);
+    delete hints_;
 }
 
 void Listener::set_timeout(const int timeout)
@@ -43,13 +41,13 @@ int Listener::on_accept()
 {
     DEBUG("listener[%d]: on accept\n", fd_);
 
-    sockaddr_in6 sa_in6;
-    socklen_t len = sizeof(sockaddr_in6);
+    sockaddr_storage ss;
+    auto sa = reinterpret_cast<sockaddr*>(&ss);
+    socklen_t len = (family_ == AF_INET)?
+        sizeof(sockaddr_in) : sizeof(sockaddr_in6);
     while (true)
     {
-        int conn = accept4(fd_,
-            reinterpret_cast<sockaddr*>(&sa_in6),
-            &len, SOCK_NONBLOCK);
+        int conn = accept4(fd_, sa, &len, SOCK_NONBLOCK);
         if (conn == -1)
         {
             if (errno != EAGAIN && errno != EWOULDBLOCK
@@ -59,7 +57,7 @@ int Listener::on_accept()
             return Event::OK;
         }
         INFO("listener[%d]: new connection %s -> %s\n",
-            fd_, to_string(&sa_in6).c_str(),
+            fd_, to_string(family_, sa).c_str(),
             to_string(hints_->ai_family, hints_->ai_addr).c_str());
 
         int rfd = socket(AF_INET, SOCK_STREAM, 0);

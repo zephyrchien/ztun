@@ -31,7 +31,7 @@ class Log
 {
     public:
         enum LEVEL { NONE, WARN, INFO, DEBUG };
-        enum BUF_LINE { LNONE, LWARN = 2, LINFO = 3, LDEBUG = 5};
+        enum BUF_LINE { LNONE, LWARN = 2, LINFO = 3, LDEBUG = 1};
         LEVEL level;
     
     private:

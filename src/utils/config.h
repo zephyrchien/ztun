@@ -30,6 +30,8 @@ struct Config
     string log_file;
     string timer_intv;
     string connect_timeout;
+    string resolve_intv;
+    string resolve_timeout;
 
     // endpoint config
     vector<EndpointConfig> ep_vec;

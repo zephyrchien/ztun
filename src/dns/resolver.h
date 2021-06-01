@@ -2,6 +2,7 @@
 #define RESOLVER_H_
 
 #include <string>
+#include <vector>
 #include <memory>
 #include <unistd.h>
 #include <netdb.h>
@@ -13,32 +14,41 @@
 #include "endpoint/endpoint.h"
 #include "dns/query.h"
 
+#define DEFAULT_RESOLVE_INTV 60000
 #define DEFAULT_RESOLVE_TIMEOUT 2000
 
+
 using std::string;
+using std::vector;
 
 class Resolver : public Endpoint
 {
     private:
         const int fd_;
+        static int intv_;
+        static int timeout_;
         static addrinfo* hints_;
         static OwnedResolver r_;
 
     private:
-        explicit Resolver(const SharedEvent, const int);
+        explicit Resolver(Event*, const int);
+
+    public:
+        vector<Query> qs;
 
     public:
         ~Resolver() override;
         static OwnedResolver& instance();
-        static int init(const SharedEvent);
+        static int init(Event*);
+        static void set_timeout(const int, const int);
+        static int resolve_intv();
         static addrinfo* inner_hints();
+        static int sync_lookup(Query*);
 
     public:
         int callback(uint32_t) override;
         int timeout() override;
-        int sync_lookup(Query*);
         void async_lookup(Query*);
-
 };
 
 #endif

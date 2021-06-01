@@ -6,13 +6,17 @@
 
 struct Timer
 {
-    const int slot;
+    bool persist;
+    const int timeout;
+
+    int slot;
     int round;
-    Endpoint* ep;
     Timer* prev;
     Timer* next;
+    Endpoint* ep;
 
-    explicit Timer(const int, const int);
+    explicit Timer(const int, const int, const int,
+        const bool = false);
     ~Timer();
     bool is_head() const;
     bool is_tail() const;

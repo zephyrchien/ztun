@@ -1,9 +1,9 @@
 #include "timer.h"
 
 
-Timer::Timer(const int s, const int r):
-    slot(s), round(r),ep(nullptr),
-    prev(nullptr), next(nullptr) { }
+Timer::Timer(const int t, const int s, const int r, const bool p):
+    persist(p), timeout(t), slot(s), round(r),
+    prev(nullptr), next(nullptr), ep(nullptr) { }
 
 Timer::~Timer() { }
 

@@ -8,9 +8,9 @@
 #include "utils/config.h"
 #include "event/event.h"
 #include "timer/wheel.h"
-#include "endpoint/endpoint.h"
+#include "dns/query.h"
+#include "dns/resolver.h"
 #include "endpoint/listener.h"
-
 
 using std::vector;
 using std::exception;
@@ -66,31 +66,114 @@ int init_logger(Config* config)
     return ret;
 }
 
-int init_timer(Config* config, Event* event)
+int init_timer(Event* event, Config* config)
 {
-    int intv, timeout;
+    int timer_intv = DEFAULT_TIMER_INTV,
+        connect_timeout = DEFAULT_CONNECT_TIMEOUT,
+        resolve_intv = DEFAULT_RESOLVE_INTV,
+        resolve_timeout = DEFAULT_RESOLVE_TIMEOUT;
     try {
-        intv = std::stoi(config->timer_intv);
-        timeout = std::stoi(config->connect_timeout);
+        if (!config->timer_intv.empty())
+            timer_intv = std::stoi(config->timer_intv);
+        if (!config->connect_timeout.empty())
+            connect_timeout = std::stoi(config->connect_timeout);
+        if (!config->resolve_intv.empty())
+            resolve_intv = std::stoi(config->resolve_intv);
+        if (!config->resolve_timeout.empty())
+            resolve_timeout = std::stoi(config->resolve_timeout);
     } catch (...) {
-        intv = timeout = -1;
-        std::cerr << 
-            "warning: bad intv|timeout, use default value"
-        << std::endl;
+        return -1;
     }
-    if (timeout > 0) Listener::set_timeout(timeout);
-    if (intv > 0) TimeWheel::set_intv(intv);
+    TimeWheel::set_intv(timer_intv);
+    Listener::set_timeout(connect_timeout);
+    Resolver::set_timeout(resolve_intv, resolve_timeout);
     return TimeWheel::init(event);
+}
+
+int init_resolver(Event* event, Config* config)
+{
+    int ret = Resolver::init(event);
+    if (ret == 0)
+        Resolver::instance()->qs.reserve(config->ep_vec.size());
+    return ret;
+}
+
+int init_utils(Event* event, Config* config)
+{
+    // init logger
+    if (init_logger(config) < 0)
+    {
+        std::cerr << "failed to init logger" << std::endl;
+        return -1;
+    }
+    // init timer
+    if (init_timer(event, config) < 0)
+    {
+        std::cerr << "failed to init timer" << std::endl;
+        return -1;
+    }
+    // init resolver
+    if (init_resolver(event, config) < 0)
+    {
+        std::cerr << "failed to init resolver" << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
+int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
+{
+    for (const auto& c: config->ep_vec)
+    {
+        std::cerr << "init: " <<
+            c.local_addr << ":" << c.local_port
+            << " -> " <<
+            c.remote_addr << ":" << c.remote_port
+        << std::endl;
+        // local
+        sa_family_t f;
+        auto raw_lsa = to_sockaddr(f, c.local_addr, c.local_port);
+        if (raw_lsa == nullptr)
+        {
+            std::cerr << "invalid local addr, quit" << std::endl;
+            delete raw_lsa;
+            return -1;
+        }
+        // remote
+        auto hints = new addrinfo;
+        memset(hints, 0, sizeof(addrinfo));
+        hints->ai_addr = reinterpret_cast<sockaddr*>(new sockaddr_storage);
+        Resolver::instance()->qs.emplace_back(event, hints,
+            c.remote_addr, std::to_string(c.remote_port));
+        auto q = &*Resolver::instance()->qs.rbegin();
+        if (Resolver::sync_lookup(q) < 0)
+        {
+            std::cerr << "invalid remote addr, quit" << std::endl;
+            delete raw_lsa;
+            return -1;
+        }
+        try {
+            lis.emplace_back(event, hints, f, raw_lsa);
+        } catch (exception& e) {
+            std::cerr << e.what() << std::endl;
+            delete raw_lsa;
+            return -1;
+        }
+        delete raw_lsa;
+    }
+    TimeWheel::instance()->add(
+        Resolver::resolve_intv(), Resolver::instance().get(), true);
+    return 0;
 }
 
 int main(int argc, char **argv)
 {
     // ignore SIGPIPE when write to a closed socket
     signal(SIGPIPE, SIG_IGN);
-    int ret = 0;
-    auto config = new Config();
 
     // load config from cmd or file
+    int ret = 0;
+    auto config = new Config();
     ret = read_config(argc, argv, config);
     if (ret < 0)
     {
@@ -107,55 +190,30 @@ int main(int argc, char **argv)
     // main event loop
     auto event = new Event();
 
-    // init logger
-    if ((ret = init_logger(config)) < 0)
+    // init logger, timer, resolver
+    if (init_utils(event, config) < 0)
     {
-        std::cerr << "failed to init logger" << std::endl;
         delete config;
+        delete event;
         return 1;
     }
-    // init timer
-    if ((ret = init_timer(config, event)) < 0)
-    {
-        std::cerr << "failed to init timer" << std::endl;
-        delete config;
-        return 1;
-    }
+
     // init endpoints
-    vector<Listener> listeners;
-    listeners.reserve((config->ep_vec.size()));
-    for (const auto& c: config->ep_vec)
+    vector<Listener> lis;
+    lis.reserve(config->ep_vec.size());
+    if (init_endpoints(lis, event, config) < 0)
     {
-        std::cerr << "init " <<
-            c.local_addr << ":" << c.local_port
-            << " -> " <<
-            c.remote_addr << ":" << c.remote_port
-        << std::endl;
-        auto raw_lsa = to_sockaddr(c.local_addr, c.local_port);
-        auto raw_rsa = to_sockaddr(c.remote_addr, c.remote_port);
-        if (raw_lsa == nullptr || raw_rsa == nullptr)
-        {
-            std::cerr << "invalid addr, quit" << std::endl;
-            delete raw_lsa;
-            delete raw_rsa;
-            delete config;
-            return 1;
-        }
-        try {
-            listeners.emplace_back(event, raw_rsa, raw_lsa);
-        } catch (exception& e) {
-            std::cerr << e.what() << std::endl;
-            delete raw_lsa;
-            delete config;
-            return 1;
-        }
-        delete raw_lsa;
+        delete config;
+        delete event;
+        return 1;
     }
     delete config;
+
     // start process
-    for (const auto& lis: listeners)
+    for (const auto& l: lis)
     {
-        event->add(lis.inner_fd(), EPOLLIN|EPOLLET, &lis);
+        event->add(l.inner_fd(), EPOLLIN|EPOLLET, &l);
     }
     event->run();
+    delete event;
 }

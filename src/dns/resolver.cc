@@ -1,10 +1,12 @@
 #include "resolver.h"
 
 
+int Resolver::intv_ = DEFAULT_RESOLVE_INTV;
+int Resolver::timeout_ = DEFAULT_RESOLVE_TIMEOUT;
 addrinfo* Resolver::hints_ = nullptr;
 OwnedResolver Resolver::r_ = OwnedResolver(nullptr);
 
-Resolver::Resolver(const SharedEvent event, const int fd):
+Resolver::Resolver(Event* event, const int fd):
     Endpoint(event), fd_(fd) { }
 
 Resolver::~Resolver()
@@ -13,25 +15,41 @@ Resolver::~Resolver()
     delete hints_;
 }
 
+int Resolver::resolve_intv()
+{
+    return intv_;
+}
+
 addrinfo* Resolver::inner_hints()
 {
     return hints_;
 }
 
-int Resolver::init(const SharedEvent event)
+void Resolver::set_timeout(const int intv, const int timeout)
+{
+    intv_ = intv;
+    timeout_ = timeout;
+}
+
+OwnedResolver& Resolver::instance()
+{
+    return r_;
+}
+
+int Resolver::init(Event* event)
 {
     // block SIGRTMIN
     sigset_t mask;
     sigemptyset(&mask);
     sigaddset(&mask, SIGRTMIN);
     sigprocmask(SIG_BLOCK, &mask, nullptr);
-    int fd = signalfd(-1, nullptr, SFD_NONBLOCK);
+    int fd = signalfd(-1, &mask, SFD_NONBLOCK);
     if (fd < 0) return -1;
     r_ = OwnedResolver(new Resolver(event, fd));
-
+    // shared query hints
     addrinfo* hints = new addrinfo;
     memset(hints, 0, sizeof(addrinfo));
-    hints->ai_family = AF_INET;
+    hints->ai_family = AF_UNSPEC;
     hints->ai_socktype = SOCK_STREAM;
     hints_ = hints;
     
@@ -48,10 +66,15 @@ int Resolver::callback(uint32_t event)
         q = reinterpret_cast<Query*>(info.ssi_ptr);
         q->callback(0);
     }
+    return Event::OK;
 }
 
 int Resolver::timeout()
 {
+    for (auto& q:qs)
+    {
+        async_lookup(&q);
+    }
     return 0;
 }
 
@@ -77,6 +100,20 @@ void Resolver::async_lookup(Query *q)
 int Resolver::sync_lookup(Query *q)
 {
     int ret = getaddrinfo_a(GAI_WAIT, &q->data, 1, nullptr);
-    if (ret != 0 || gai_error(q->data) != 0) return -1;
+    if (ret != 0 || gai_error(q->data) != 0)
+    {
+        freeaddrinfo(q->data->ar_result);
+        q->data->ar_result = nullptr;
+        return -1;
+    }
+    q->hints->ai_family = q->data->ar_result->ai_family;
+    q->hints->ai_addrlen = q->data->ar_result->ai_addrlen;
+    int n = (q->hints->ai_family == AF_INET)?
+        sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+    auto src = reinterpret_cast<char*>(q->data->ar_result->ai_addr);
+    auto dst = reinterpret_cast<char*>(q->hints->ai_addr);
+    std::copy_n(src, n, dst);
+    freeaddrinfo(q->data->ar_result);
+    q->data->ar_result = nullptr;
     return 0;
 }

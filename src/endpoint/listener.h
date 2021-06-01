@@ -25,11 +25,12 @@ class Listener : public Endpoint
 
     private:
         const int fd_;
+        const sa_family_t family_;
         const addrinfo* hints_;
 
     public:
         explicit Listener(Event*, const addrinfo*,
-            const sockaddr_in6*);
+            const sa_family_t, const sockaddr_storage*);
         ~Listener() override;
         static void set_timeout(const int);
 

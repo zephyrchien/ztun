@@ -79,6 +79,10 @@ int Config::parse_global_conf(pair<string, string>& kv)
         this->timer_intv = kv.second;
     else if (kv.first == "connect_timeout")
         this->connect_timeout = kv.second;
+    else if (kv.first == "resolve_intv")
+        this->resolve_intv = kv.second;
+    else if (kv.first == "resolve_timeout")
+        this->resolve_timeout = kv.second;
     else return -1;
     return 0;
 }

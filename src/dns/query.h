@@ -20,11 +20,11 @@ class Query : public Endpoint
         const string name;
         const string service;
         gaicb *data;
-        SharedSA rsa;
+        addrinfo *hints;
         Timer* timer;
 
     public:
-        explicit Query(const SharedEvent, SharedSA,
+        explicit Query(Event*, addrinfo* hints,
             const string&, const string&);
         ~Query() override;
 
