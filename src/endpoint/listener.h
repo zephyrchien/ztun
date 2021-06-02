@@ -2,6 +2,7 @@
 #define LISTENER_H_
 
 #include <stdexcept>
+#include <functional>
 #include <cerrno>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -12,16 +13,21 @@
 #include "utils/utils.h"
 #include "event/event.h"
 #include "timer/wheel.h"
+#include "endpoint/endpoint.h"
 #include "endpoint/connector.h"
 
 
 #define DEFAULT_CONNECT_TIMEOUT 2000
 
-class Listener : public Endpoint
+class Listener
 {
-    private:
-        static int timeout_;
-        const static int backlog_ = 64;
+    public:
+        Event* ev;
+        Endpoint ep;
+
+    public:
+        static int timeout;
+        const static int backlog = 64;
 
     private:
         const int fd_;
@@ -31,14 +37,12 @@ class Listener : public Endpoint
     public:
         explicit Listener(Event*, const addrinfo*,
             const sa_family_t, const sockaddr_storage*);
-        ~Listener() override;
-        static void set_timeout(const int);
+        ~Listener();
+        int inner_fd() const;
 
     public:
-        int callback(uint32_t) override;
-        int timeout() override;
         int on_accept();
-        int inner_fd() const;
+        int callback(uint32_t);
 };
 
 #endif

@@ -84,9 +84,10 @@ int init_timer(Event* event, Config* config)
     } catch (...) {
         return -1;
     }
-    TimeWheel::set_intv(timer_intv);
-    Listener::set_timeout(connect_timeout);
-    Resolver::set_timeout(resolve_intv, resolve_timeout);
+    TimeWheel::intv = timer_intv;
+    Listener::timeout = connect_timeout;
+    Resolver::intv = resolve_intv;
+    Resolver::timeout = resolve_timeout;
     return TimeWheel::init(event);
 }
 
@@ -143,7 +144,7 @@ int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
         auto hints = new addrinfo;
         memset(hints, 0, sizeof(addrinfo));
         hints->ai_addr = reinterpret_cast<sockaddr*>(new sockaddr_storage);
-        Resolver::instance()->qs.emplace_back(event, hints,
+        Resolver::instance()->qs.emplace_back(hints,
             c.remote_addr, std::to_string(c.remote_port));
         auto q = &*Resolver::instance()->qs.rbegin();
         if (Resolver::sync_lookup(q) < 0)
@@ -162,7 +163,7 @@ int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
         delete raw_lsa;
     }
     TimeWheel::instance()->add(
-        Resolver::resolve_intv(), Resolver::instance().get(), true);
+        Resolver::intv, &Resolver::instance()->ep, true);
     return 0;
 }
 
@@ -210,9 +211,11 @@ int main(int argc, char **argv)
     delete config;
 
     // start process
-    for (const auto& l: lis)
+    for (auto& l: lis)
     {
-        event->add(l.inner_fd(), EPOLLIN|EPOLLET, &l);
+        l.ep.callback = std::bind(&Listener::callback,
+            &l, std::placeholders::_1);
+        event->add(l.inner_fd(), EPOLLIN|EPOLLET, &l.ep);
     }
     event->run();
     delete event;

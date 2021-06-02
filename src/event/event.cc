@@ -16,11 +16,11 @@ int Event::add(int fd, epoll_event& ev) const
     return epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
 }
 
-int Event::add(int fd, uint32_t events, const Endpoint* ep) const
+int Event::add(int fd, uint32_t events, Endpoint* ep) const
 {
     epoll_event ev;
     ev.events = events;
-    ev.data.ptr = (void*)ep;
+    ev.data.ptr = static_cast<void*>(ep);
     return epoll_ctl(fd_, EPOLL_CTL_ADD, fd, &ev);
 }
 
@@ -29,11 +29,11 @@ int Event::mod(int fd, epoll_event& ev) const
     return epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
 }
 
-int Event::mod(int fd, uint32_t events, const Endpoint* ep) const
+int Event::mod(int fd, uint32_t events, Endpoint* ep) const
 {
     epoll_event ev;
     ev.events = events;
-    ev.data.ptr = (void*)ep;
+    ev.data.ptr = static_cast<void*>(ep);
     return epoll_ctl(fd_, EPOLL_CTL_MOD, fd, &ev);
 }
 
@@ -59,15 +59,16 @@ int Event::run()
             ptrset_.clear();
             need_skip = false;
         }
-        if ((nready = epoll_wait(fd_, events_.data(), maxev_, -1)) <= 0) continue;
+        nready = epoll_wait(fd_, events_.data(), maxev_, -1);
+        if (nready <= 0) continue;
         for (int i=0; i<nready; i++)
         {
             ev = events_[i].events;
-            ep = (Endpoint *)events_[i].data.ptr;
-            if (need_skip && ptrset_.find(uintptr_t(ep)) != ptrset_.end())
-            {
-                continue;
-            }
+            ep = static_cast<Endpoint*>(events_[i].data.ptr);
+            if (need_skip &&
+                ptrset_.find(reinterpret_cast<uintptr_t>(ep))
+                != ptrset_.end()
+            ) continue;
             ret = ep->callback(ev);
             if (ret == Event::CAUTION) need_skip = true;
         }

@@ -1,21 +1,16 @@
 #include "wheel.h"
 
 
-int TimeWheel::intv_ = DEFAULT_TIMER_INTV;
+int TimeWheel::intv = DEFAULT_TIMER_INTV;
 OwnedTimer TimeWheel::wheel_ = OwnedTimer(nullptr);
 
 TimeWheel::TimeWheel(Event* event, const int fd):
-    Endpoint(event), fd_(fd), cursor_(0) { }
+    ev(event), fd_(fd), cursor_(0) { }
 
 TimeWheel::~TimeWheel()
 {
-    event_->del(fd_);
+    ev->del(fd_);
     close(fd_);
-}
-
-void TimeWheel::set_intv(const int intv)
-{
-    intv_ = intv;
 }
 
 OwnedTimer& TimeWheel::instance()
@@ -28,10 +23,10 @@ int TimeWheel::init(Event* event)
     int fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
     if (fd < 0) return -1;
     itimerspec its;
-    its.it_value.tv_sec = intv_ / 1000;
-    its.it_value.tv_nsec = (intv_ % 1000) * 1000000;
-    its.it_interval.tv_sec = intv_ / 1000;
-    its.it_interval.tv_nsec = (intv_ % 1000) * 1000000;
+    its.it_value.tv_sec = intv / 1000;
+    its.it_value.tv_nsec = (intv % 1000) * 1000000;
+    its.it_interval.tv_sec = intv / 1000;
+    its.it_interval.tv_nsec = (intv % 1000) * 1000000;
     if (timerfd_settime(fd, 0, &its, nullptr) < 0)
     {
         close(fd);
@@ -39,15 +34,18 @@ int TimeWheel::init(Event* event)
     }
     wheel_ = std::unique_ptr<TimeWheel>(new TimeWheel(event, fd));
     wheel_->slots_.fill(nullptr);
-    event->add(fd, EPOLLIN|EPOLLET, wheel_.get());
+    wheel_->ep.callback = [&](uint32_t e) {
+        return wheel_->callback(e);
+    };
+    event->add(fd, EPOLLIN|EPOLLET, &wheel_->ep);
     return 0;
 }
 
 Timer* TimeWheel::add(const int timeout, Endpoint* ep, const bool persist)
 {
-    int ticks = (timeout < intv_) ? (1) : (timeout / intv_);
-    int round = ticks / maxslot_;
-    int slot = (cursor_ + ticks % maxslot_) % maxslot_;
+    int ticks = (timeout < intv) ? (1) : (timeout / intv);
+    int round = ticks / maxslot;
+    int slot = (cursor_ + ticks % maxslot) % maxslot;
     Timer* t = new Timer(timeout, slot, round, persist);
     t->ep = ep;
     // insert to head
@@ -94,7 +92,7 @@ int TimeWheel::tick()
             continue;
         }
         // timeout
-        ret = t->ep->timeout();
+        ret = t->ep->on_timeout();
         // delete the timer
         if (t == slots_[cursor_])
         {
@@ -112,11 +110,11 @@ int TimeWheel::tick()
         // reload
         if (tx->persist)
         {
-            int ticks = (tx->timeout < intv_)?
-                (1) : (tx->timeout / intv_);
-            int slot = (cursor_ + ticks % maxslot_) % maxslot_;
+            int ticks = (tx->timeout < intv)?
+                (1) : (tx->timeout / intv);
+            int slot = (cursor_ + ticks % maxslot) % maxslot;
             tx->slot = slot;
-            tx->round = ticks / maxslot_;
+            tx->round = ticks / maxslot;
             if (slots_[slot] == nullptr) 
                 slots_[slot] = tx;
             else
@@ -127,7 +125,7 @@ int TimeWheel::tick()
             }
         }
     }
-    cursor_ = (cursor_ + 1) % maxslot_;
+    cursor_ = (cursor_ + 1) % maxslot;
     return ret;
 }
 
@@ -146,9 +144,4 @@ int TimeWheel::callback(uint32_t event)
         return ret;
     }
     return Event::ERR;
-}
-
-int TimeWheel::timeout()
-{
-    return 0;
 }

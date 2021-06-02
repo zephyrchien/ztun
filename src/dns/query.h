@@ -14,8 +14,11 @@
 
 using std::string;
 
-class Query : public Endpoint
+class Query
 {
+    public:
+        Endpoint ep;
+
     public:
         const string name;
         const string service;
@@ -24,13 +27,13 @@ class Query : public Endpoint
         Timer* timer;
 
     public:
-        explicit Query(Event*, addrinfo* hints,
+        explicit Query(addrinfo* hints,
             const string&, const string&);
-        ~Query() override;
+        ~Query();
 
     public:
-        int callback(uint32_t) override;
-        int timeout() override;
+        int on_timeout();
+        int callback(uint32_t);
 };
 
 #endif

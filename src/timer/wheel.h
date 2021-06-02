@@ -10,16 +10,20 @@
 
 #define DEFAULT_TIMER_INTV 500
 
-class TimeWheel: public Endpoint
+class TimeWheel
 {
-    private:
-        static int intv_;
-        const static int maxslot_ = 256;
+    public:
+        static int intv;
+        const static int maxslot = 256;
+
+    public:
+        Event* ev;
+        Endpoint ep;
 
     private:
         const int fd_;
         int cursor_;
-        std::array<Timer*, maxslot_> slots_;
+        std::array<Timer*, maxslot> slots_;
 
     private:
         explicit TimeWheel(Event*, const int);
@@ -28,15 +32,15 @@ class TimeWheel: public Endpoint
     public:
         ~TimeWheel();
         static int init(Event*);
-        static void set_intv(const int);
         static OwnedTimer& instance();
 
     public:
         Timer* add(const int, Endpoint*, const bool = false);
         void del(const Timer*);
         int tick();
-        int callback(uint32_t) override;
-        int timeout() override; 
+    
+    public:
+        int callback(uint32_t);
 };
 
 #endif

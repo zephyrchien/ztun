@@ -21,34 +21,35 @@
 using std::string;
 using std::vector;
 
-class Resolver : public Endpoint
+class Resolver
 {
-    private:
-        const int fd_;
-        static int intv_;
-        static int timeout_;
-        static addrinfo* hints_;
-        static OwnedResolver r_;
-
-    private:
-        explicit Resolver(Event*, const int);
-
     public:
+        Event* ev;
+        Endpoint ep;
         vector<Query> qs;
 
     public:
-        ~Resolver() override;
-        static OwnedResolver& instance();
-        static int init(Event*);
-        static void set_timeout(const int, const int);
-        static int resolve_intv();
-        static addrinfo* inner_hints();
-        static int sync_lookup(Query*);
+        static int intv;
+        static int timeout;
+        static addrinfo* query_hints;
+
+    private:
+        const int fd_;
+
+    private:
+        static OwnedResolver r_;
+        explicit Resolver(Event*, const int);
 
     public:
-        int callback(uint32_t) override;
-        int timeout() override;
+        ~Resolver();
+        static OwnedResolver& instance();
+        static int init(Event*);
+        
+    public:
+        int on_timeout();
+        int callback(uint32_t);
         void async_lookup(Query*);
+        static int sync_lookup(Query*);
 };
 
 #endif

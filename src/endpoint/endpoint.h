@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <array>
+#include <functional>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -10,17 +11,14 @@
 #include "event/event.h"
 
 
-class Endpoint
-{
-    protected:
-        Event* event_;
+using std::function;
 
-    public:
-        explicit Endpoint(Event*);
-        virtual ~Endpoint();
-        virtual int callback(uint32_t) = 0;
-        virtual int timeout() = 0;
-        const Event* inner_event() const;
+struct Endpoint
+{
+    Endpoint() { };
+    ~Endpoint() { };
+    function<int(uint32_t)> callback;
+    function<int()> on_timeout;
 };
 
 #endif

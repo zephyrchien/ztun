@@ -2,14 +2,9 @@
 
 
 Connector::Connector(Event* event, const int rfd, const int lfd):
-    Endpoint(event), lfd_(lfd), rfd_(rfd) { }
+    ev(event), lfd_(lfd), rfd_(rfd) { }
 
 Connector::~Connector() { }
-
-void Connector::set_timer(Timer* timer)
-{
-    timer_ = timer;
-}
 
 int Connector::callback(uint32_t events)
 {
@@ -17,10 +12,10 @@ int Connector::callback(uint32_t events)
     return Event::ERR;
 }
 
-int Connector::timeout()
+int Connector::on_timeout()
 {
     WARN("connector[%d-%d]: connect timeout\n", lfd_, rfd_);
-    event_->del(rfd_);
+    ev->del(rfd_);
     close(lfd_);
     close(rfd_);
     delete this;
@@ -30,8 +25,8 @@ int Connector::timeout()
 int Connector::on_connect()
 {
     DEBUG("connector[%d-%d]: on connect\n", lfd_, rfd_);
-    TimeWheel::instance()->del(timer_);
-    timer_ = nullptr;
+    TimeWheel::instance()->del(timer);
+    timer = nullptr;
     
     int error = get_error(rfd_);
     if (error != 0)
@@ -39,7 +34,7 @@ int Connector::on_connect()
         WARN("connector[%d-%d]: connect failed, %s\n", 
             lfd_, rfd_,
             const_cast<const char*>(strerror(error)));
-        event_->del(rfd_);
+        ev->del(rfd_);
         close(lfd_);
         close(rfd_);
         delete this;
@@ -51,7 +46,7 @@ int Connector::on_connect()
     int rfd2 = dup_with_opt(rfd_);
     if (lfd2 < 0 || rfd2 < 0)
     {
-        event_->del(rfd_);
+        ev->del(rfd_);
         close(lfd_);
         close(rfd_);
         close(lfd2);
@@ -63,16 +58,20 @@ int Connector::on_connect()
 
     DEBUG("connector[%d-%d]: init buffer and readwriter, add event[rw]\n",
         lfd_, rfd_);
-    SharedBuffer rbuf = std::make_shared<ZBuffer>();
-    SharedBuffer wbuf = std::make_shared<ZBuffer>();
-    ReadWriter* rw_fwd = new ReadWriter(event_, lfd_, lfd2, rbuf, wbuf);
-    ReadWriter* rw_rev = new ReadWriter(event_, rfd_, rfd2, wbuf, rbuf);
-    rw_fwd->set_another(rw_rev);
-    rw_rev->set_another(rw_fwd);
-    event_->add(lfd_, EPOLLIN|EPOLLET, rw_fwd);
-    //event_->add(lfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_fwd);
-    event_->mod(rfd_, EPOLLIN|EPOLLET, rw_rev);
-    //event_->add(rfd2, EPOLLOUT|EPOLLET|EPOLLONESHOT, rw_rev);
+    SharedZBuffer rbuf = std::make_shared<ZBuffer>();
+    SharedZBuffer wbuf = std::make_shared<ZBuffer>();
+    ReadWriter* rw_fwd = new ReadWriter(ev, lfd_, lfd2, rbuf, wbuf);
+    ReadWriter* rw_rev = new ReadWriter(ev, rfd_, rfd2, wbuf, rbuf);
+    rw_fwd->another = rw_rev; rw_rev->another = rw_fwd;
+    // bind callback func
+    rw_fwd->ep.callback = [=](uint32_t e) {
+        return rw_fwd->callback(e);
+    };
+    rw_rev->ep.callback = [=](uint32_t e) {
+        return rw_rev->callback(e);
+    };
+    ev->add(lfd_, EPOLLIN|EPOLLET, &rw_fwd->ep);
+    ev->mod(rfd_, EPOLLIN|EPOLLET, &rw_rev->ep);
     delete this;
     DEBUG("connector[%d-%d]: delete connector\n", lfd_, rfd_);
     return Event::OK;

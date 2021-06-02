@@ -8,30 +8,30 @@
 #include "log/log.h"
 #include "utils/utils.h"
 #include "event/event.h"
-#include "buffer/ringbuffer.h"
+#include "buffer/zbuffer.h"
+#include "endpoint/endpoint.h"
 
 
-class ReadWriter : public Endpoint
+class ReadWriter
 {
+    public:
+        Event* ev;
+        Endpoint ep;
+        ReadWriter* another;
+
     private:
         bool rev_, wev_;
         const int rfd_;
         const int wfd_;
-        const SharedBuffer rbuf_;
-        const SharedBuffer wbuf_;
-        ReadWriter* another_;
+        const SharedZBuffer rbuf_;
+        const SharedZBuffer wbuf_;
 
     public:
         explicit ReadWriter(Event*, const int, const int,
-            const SharedBuffer, const SharedBuffer);
-        ~ReadWriter() override;
-        int inner_rfd() const;
-        int inner_wfd() const;
-        SharedBuffer inner_rbuf() const;
-        SharedBuffer inner_wbuf() const;
-        void set_another(ReadWriter*);
-        int callback(uint32_t) override;
-        int timeout() override;
+            const SharedZBuffer, const SharedZBuffer);
+        ~ReadWriter();
+
+        int callback(uint32_t) ;
         int on_read();
         int on_write();
 };

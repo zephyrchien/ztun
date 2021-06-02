@@ -1,15 +1,13 @@
 #include "query.h"
 
 
-Query::Query(Event* e, addrinfo* h,
-    const string& n, const string& s):
-    Endpoint(e), name(n), service(s),
-    hints(h), timer(nullptr)
+Query::Query(addrinfo* h, const string& n, const string& s):
+    name(n), service(s), hints(h), timer(nullptr)
 {
     data = new gaicb;
     data->ar_name = name.c_str();
     data->ar_service = service.c_str();
-    data->ar_request = Resolver::inner_hints();
+    data->ar_request = Resolver::query_hints;
     data->ar_result = nullptr;
 }
 
@@ -49,7 +47,7 @@ int Query::callback(uint32_t event)
     return 0;
 }
 
-int Query::timeout()
+int Query::on_timeout()
 {
     WARN("resolver: lookup %s timeout\n", name.c_str());
     timer = nullptr;

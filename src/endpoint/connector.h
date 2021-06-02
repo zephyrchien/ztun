@@ -13,23 +13,29 @@
 #include "timer/wheel.h"
 #include "buffer/ringbuffer.h"
 #include "buffer/zbuffer.h"
+#include "endpoint/endpoint.h"
 #include "endpoint/readwriter.h"
 
 
-class Connector : public Endpoint
+class Connector
 {
+    public:
+        Event* ev;
+        Endpoint ep;
+        Timer* timer;
+    
     private:
         const int lfd_;
         const int rfd_;
-        Timer* timer_;
     
     public:
         explicit Connector(Event*, const int, const int);
-        ~Connector() override;
-        void set_timer(Timer*);
-        int callback(uint32_t) override;
-        int timeout() override;
+        ~Connector();
+
+    public:
         int on_connect();
+        int on_timeout();
+        int callback(uint32_t);
 };
 
 #endif

@@ -1,35 +1,20 @@
 #include "resolver.h"
 
 
-int Resolver::intv_ = DEFAULT_RESOLVE_INTV;
-int Resolver::timeout_ = DEFAULT_RESOLVE_TIMEOUT;
-addrinfo* Resolver::hints_ = nullptr;
+int Resolver::intv = DEFAULT_RESOLVE_INTV;
+int Resolver::timeout = DEFAULT_RESOLVE_TIMEOUT;
+addrinfo* Resolver::query_hints = nullptr;
 OwnedResolver Resolver::r_ = OwnedResolver(nullptr);
 
 Resolver::Resolver(Event* event, const int fd):
-    Endpoint(event), fd_(fd) { }
+    ev(event), fd_(fd){ }
 
 Resolver::~Resolver()
 {
     close(fd_);
-    delete hints_;
+    delete query_hints;
 }
 
-int Resolver::resolve_intv()
-{
-    return intv_;
-}
-
-addrinfo* Resolver::inner_hints()
-{
-    return hints_;
-}
-
-void Resolver::set_timeout(const int intv, const int timeout)
-{
-    intv_ = intv;
-    timeout_ = timeout;
-}
 
 OwnedResolver& Resolver::instance()
 {
@@ -51,9 +36,15 @@ int Resolver::init(Event* event)
     memset(hints, 0, sizeof(addrinfo));
     hints->ai_family = AF_UNSPEC;
     hints->ai_socktype = SOCK_STREAM;
-    hints_ = hints;
-    
-    event->add(fd, EPOLLIN|EPOLLET, r_.get());
+    query_hints = hints;
+    // bind callback func
+    r_->ep.callback = [&](uint32_t e) {
+        return r_->callback(e);
+    };
+    r_->ep.on_timeout = [&] {
+        return r_->on_timeout();
+    };
+    event->add(fd, EPOLLIN|EPOLLET, &r_->ep);
     return 0;
 }
 
@@ -69,7 +60,7 @@ int Resolver::callback(uint32_t event)
     return Event::OK;
 }
 
-int Resolver::timeout()
+int Resolver::on_timeout()
 {
     for (auto& q:qs)
     {
@@ -93,7 +84,7 @@ void Resolver::async_lookup(Query *q)
         return;
     }
     Timer *t = TimeWheel::instance()->add(
-        DEFAULT_RESOLVE_TIMEOUT, q);
+        DEFAULT_RESOLVE_TIMEOUT, &q->ep);
     q->timer = t;
 }
 

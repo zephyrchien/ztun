@@ -1,11 +1,11 @@
 #include "listener.h"
 
 
-int Listener::timeout_ = DEFAULT_CONNECT_TIMEOUT;
+int Listener::timeout = DEFAULT_CONNECT_TIMEOUT;
 
 Listener::Listener(Event* event, const addrinfo* hints,
     const sa_family_t family, const sockaddr_storage* ss):
-    Endpoint(event), fd_(socket(family, SOCK_STREAM, 0)),
+    ev(event), fd_(socket(family, SOCK_STREAM, 0)),
     family_(family), hints_(hints)
 {
     set_reuseaddr(fd_);
@@ -18,18 +18,13 @@ Listener::Listener(Event* event, const addrinfo* hints,
         close(fd_);
         throw std::runtime_error(strerror(errno));
     }
-    listen(fd_, backlog_);
+    listen(fd_, backlog);
 }
 
 Listener::~Listener()
 {
     close(fd_);
     delete hints_;
-}
-
-void Listener::set_timeout(const int timeout)
-{
-    timeout_ = timeout;
 }
 
 int Listener::inner_fd() const
@@ -62,13 +57,20 @@ int Listener::on_accept()
 
         int rfd = socket(AF_INET, SOCK_STREAM, 0);
         set_nonblocking(rfd);
-        Connector* c = new Connector(event_, rfd, conn);
-
+        Connector* c = new Connector(ev, rfd, conn);
+        // bind callback func
+        c->ep.callback = [=](uint32_t e) {
+            return c->callback(e);
+        };
+        c->ep.on_timeout = [=]() {
+            return c->on_timeout();
+        };
+        
         DEBUG("listener[%d]: add event[connect]\n", fd_);
-        event_->add(rfd, EPOLLOUT|EPOLLET|EPOLLONESHOT, c);
+        ev->add(rfd, EPOLLOUT|EPOLLET|EPOLLONESHOT, &c->ep);
         DEBUG("listener[%d]: set timeout[connect]\n", fd_);
-        Timer* t = TimeWheel::instance()->add(timeout_, c);
-        c->set_timer(t);
+        Timer* t = TimeWheel::instance()->add(timeout, &c->ep);
+        c->timer = t;
         int ret = connect(rfd, hints_->ai_addr, hints_->ai_addrlen);
 
         if (ret == 0)
@@ -83,7 +85,7 @@ int Listener::on_accept()
         }
         WARN("listener[%d]: connect failed immediately, %s\n",
             fd_, const_cast<const char*>(strerror(errno)));
-        event_->del(rfd);
+        ev->del(rfd);
         delete c;
         close(conn);
         close(rfd);
@@ -95,9 +97,4 @@ int Listener::callback(uint32_t events)
 {
     if (events & EPOLLIN) return on_accept();
     return Event::ERR;
-}
-
-int Listener::timeout()
-{
-    return 0;
 }

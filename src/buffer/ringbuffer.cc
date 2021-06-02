@@ -1,26 +1,11 @@
 #include "ringbuffer.h"
 
 
-RingBuffer::RingBuffer(): Buffer(), ov(false), r_offset(0), w_offset(0)
+RingBuffer::RingBuffer():
+    done(false), ov(false),
+    r_offset(0), w_offset(0)
 {
     data = new char[size];    
-}
-
-RingBuffer::RingBuffer(RingBuffer&& buffer): Buffer()
-{
-    this->done = buffer.done;
-    this->r_offset = buffer.r_offset;
-    this->w_offset = buffer.w_offset;
-    this->data = buffer.data;
-}
-
-RingBuffer& RingBuffer::operator=(RingBuffer&& buffer)
-{
-    this->done = buffer.done;
-    this->r_offset = buffer.r_offset;
-    this->w_offset = buffer.w_offset;
-    this->data = buffer.data;
-    return *this;
 }
 
 RingBuffer::~RingBuffer()

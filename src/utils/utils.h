@@ -29,25 +29,27 @@ using std::unique_ptr;
 
 enum LOG_LEVEL { NONE, WARN, INFO, DEBUG };
 enum LOG_BUF_LINE { LNONE, LWARN = 2, LINFO = 5, LDEBUG = 10};
+
+struct ZBuffer;
+struct RingBuffer;
+struct Timer;
+struct Endpoint;
 class Event;
-class Buffer;
-class ZBuffer;
-class RingBuffer;
-class Config;
+struct Config;
 class Log;
 class TimeWheel;
-class Endpoint;
 class Listener;
+class Connector;
 class ReadWriter;
 class Query;
 class Resolver;
-typedef shared_ptr<Buffer> SharedBuffer;
-typedef unique_ptr<Buffer> OwnedBuffer;
-typedef unique_ptr<RingBuffer> OwnedRingBuffer;
+
 typedef unordered_set<uintptr_t> PtrSet;
 typedef unique_ptr<Log> OwnedLogger;
 typedef unique_ptr<TimeWheel> OwnedTimer;
 typedef unique_ptr<Resolver> OwnedResolver;
+typedef shared_ptr<ZBuffer> SharedZBuffer;
+typedef unique_ptr<RingBuffer> OwnedRingBuffer;
 
 string& trim_space_left(string&);
 string& trim_space_right(string&);
