@@ -94,9 +94,17 @@ int init_timer(Event* event, Config* config)
 int init_resolver(Event* event, Config* config)
 {
     int ret = Resolver::init(event);
-    if (ret == 0)
-        Resolver::instance()->qs.reserve(config->ep_vec.size());
-    return ret;
+    if (ret < 0) return -1;
+    Resolver::instance()->qs.reserve(config->ep_vec.size());
+    for (auto it = Resolver::instance()->qs.begin();
+        it != Resolver::instance()->qs.end();
+        it++)
+    {
+        it->ep.on_timeout = [=] {
+            return it->on_timeout();
+        };
+    }
+    return 0;
 }
 
 int init_utils(Event* event, Config* config)
@@ -211,11 +219,12 @@ int main(int argc, char **argv)
     delete config;
 
     // start process
-    for (auto& l: lis)
+    for (auto it = lis.begin(); it != lis.end(); it++)
     {
-        l.ep.callback = std::bind(&Listener::callback,
-            &l, std::placeholders::_1);
-        event->add(l.inner_fd(), EPOLLIN|EPOLLET, &l.ep);
+        it->ep.callback = [=](uint32_t ev) {
+            return it->callback(ev);
+        };
+        event->add(it->inner_fd(), EPOLLIN|EPOLLET, &it->ep);
     }
     event->run();
     delete event;

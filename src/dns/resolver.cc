@@ -84,7 +84,7 @@ void Resolver::async_lookup(Query *q)
         return;
     }
     Timer *t = TimeWheel::instance()->add(
-        DEFAULT_RESOLVE_TIMEOUT, &q->ep);
+        timeout, &q->ep);
     q->timer = t;
 }
 
@@ -93,7 +93,6 @@ int Resolver::sync_lookup(Query *q)
     int ret = getaddrinfo_a(GAI_WAIT, &q->data, 1, nullptr);
     if (ret != 0 || gai_error(q->data) != 0)
     {
-        freeaddrinfo(q->data->ar_result);
         q->data->ar_result = nullptr;
         return -1;
     }

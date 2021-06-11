@@ -13,7 +13,8 @@ Query::Query(addrinfo* h, const string& n, const string& s):
 
 Query::~Query()
 {
-    freeaddrinfo(data->ar_result);
+    if (data->ar_result != nullptr) 
+        freeaddrinfo(data->ar_result);
     delete data;
     delete hints->ai_addr;
     delete hints;
@@ -28,7 +29,6 @@ int Query::callback(uint32_t event)
     {
         WARN("resolver: resolve %s failed, %s\n", name.c_str(),
             gai_strerror(ret));
-        freeaddrinfo(data->ar_result);
         data->ar_result = nullptr;
         return -1;
     }
@@ -52,7 +52,6 @@ int Query::on_timeout()
     WARN("resolver: lookup %s timeout\n", name.c_str());
     timer = nullptr;
     gai_cancel(data);
-    freeaddrinfo(data->ar_result);
     data->ar_result = nullptr;
     return 0;
 }
