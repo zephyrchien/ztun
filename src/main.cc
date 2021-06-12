@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include "log/log.h"
+#include "pool/pool.h"
 #include "utils/utils.h"
 #include "utils/config.h"
 #include "event/event.h"
@@ -175,6 +176,12 @@ int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
     return 0;
 }
 
+int init_mempool(Config* config)
+{
+    Pool::init();
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     // ignore SIGPIPE when write to a closed socket
@@ -206,6 +213,9 @@ int main(int argc, char **argv)
         delete event;
         return 1;
     }
+    
+    // init memory pool
+    init_mempool(config);
 
     // init endpoints
     vector<Listener> lis;
@@ -216,8 +226,8 @@ int main(int argc, char **argv)
         delete event;
         return 1;
     }
+    
     delete config;
-
     // start process
     for (auto it = lis.begin(); it != lis.end(); it++)
     {

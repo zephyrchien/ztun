@@ -8,10 +8,10 @@
 #include <unistd.h>
 #include <memory.h>
 #include "log/log.h"
+#include "pool/pool.h"
 #include "utils/utils.h"
 #include "event/event.h"
 #include "timer/wheel.h"
-#include "buffer/ringbuffer.h"
 #include "buffer/zbuffer.h"
 #include "endpoint/endpoint.h"
 #include "endpoint/readwriter.h"
@@ -31,6 +31,8 @@ class Connector
     public:
         explicit Connector(Event*, const int, const int);
         ~Connector();
+        void* operator new(std::size_t);
+        void operator delete(void*);
 
     public:
         int on_connect();

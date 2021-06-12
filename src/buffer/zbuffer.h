@@ -4,18 +4,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "utils/utils.h"
-
+#include "pool/pool.h"
 
 struct ZBuffer
 {
-    bool done;
+    int ref;
     int rfd;
     int wfd;
     int offset;
     const static int size = 0x10000;
 
-    explicit ZBuffer();
-    ~ZBuffer();
+    static ZBuffer* create();
+    void operator delete(void *ptr);
     inline int xread(const int, int&);
     inline int xwrite(const int, int&);
 };

@@ -16,7 +16,13 @@ using std::function;
 struct Endpoint
 {
     Endpoint() { };
+    explicit Endpoint(
+        function<int(uint32_t)> cb,
+        function<int()> timeout):
+        callback(cb), on_timeout(timeout)
+        { };
     ~Endpoint() { };
+
     function<int(uint32_t)> callback;
     function<int()> on_timeout;
 };

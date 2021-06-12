@@ -2,7 +2,9 @@
 #define TIMER_H_
 
 #include <array>
+#include "pool/pool.h"
 #include "endpoint/endpoint.h"
+
 
 struct Timer
 {
@@ -18,6 +20,8 @@ struct Timer
     explicit Timer(const int, const int, const int,
         const bool = false);
     ~Timer();
+    void* operator new(std::size_t);
+    void operator delete(void*);
     bool is_head() const;
     bool is_tail() const;
 };

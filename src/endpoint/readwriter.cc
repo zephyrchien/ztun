@@ -3,8 +3,8 @@
 
 ReadWriter::ReadWriter(Event* event,
     const int rfd, const int wfd,
-    const SharedZBuffer rbuf, const SharedZBuffer wbuf):
-    ev(event), another(nullptr), rev_(true), wev_(false),
+    ZBuffer* rbuf, ZBuffer* wbuf):
+    ev(event), another(nullptr), rev(false), wev(false),
     rfd_(rfd), wfd_(wfd), rbuf_(rbuf), wbuf_(wbuf){ }
 
 ReadWriter::~ReadWriter()
@@ -13,6 +13,21 @@ ReadWriter::~ReadWriter()
     ev->del(wfd_);
     close(rfd_);
     close(wfd_);
+    delete rbuf_;
+    delete wbuf_;
+}
+
+void* ReadWriter::operator new(std::size_t size)
+{
+    auto ptr = LinkList<ReadWriter>::alloc();
+    return ptr;
+}
+
+void ReadWriter::operator delete(void *ptr)
+{
+    LinkList<ReadWriter>::collect(
+        static_cast<LinkList<ReadWriter>*>(ptr)
+    );
 }
 
 int ReadWriter::callback(uint32_t events)
@@ -47,7 +62,7 @@ int ReadWriter::on_read()
     if (n == 0)
     {
         DEBUG("reader[%d]: EOF, socket is closed\n", rfd_);
-        rbuf_->done = true;
+        another->rev = true;
         another->another = nullptr;
         another->on_write();
         ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&ep));
@@ -76,7 +91,7 @@ int ReadWriter::on_write()
     if (to_write == 0)
     {
         DEBUG("writer[%d]: buffer is empty\n", wfd_);
-        if (wbuf_->done)
+        if (rev)
         {
             DEBUG("writer[%d]: finished, shutdown now\n", wfd_);
             ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&ep));
@@ -89,9 +104,9 @@ int ReadWriter::on_write()
     if (n < 0 && (errno == EWOULDBLOCK || errno == EAGAIN))
     {
         DEBUG("writer[%d]: socket would block\n", wfd_);
-        if (!wev_)
+        if (!wev)
         {
-            wev_ = true;
+            wev = true;
             ev->add(wfd_, EPOLLOUT|EPOLLET|EPOLLONESHOT, &ep);
         }else
             ev->mod(wfd_, EPOLLOUT|EPOLLET|EPOLLONESHOT, &ep);

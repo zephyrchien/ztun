@@ -1,16 +1,17 @@
 #include "zbuffer.h"
 
 
-ZBuffer::ZBuffer(): done(false), offset(0)
+ZBuffer* ZBuffer::create()
 {
-    int rw_pipe[2];
-    int ret __attribute__((unused)) = pipe2(rw_pipe, O_NONBLOCK);
-    rfd = rw_pipe[0];
-    wfd = rw_pipe[1];
+    auto ptr = LinkList<ZBuffer>::alloc();
+    return reinterpret_cast<ZBuffer*>(ptr);
 }
 
-ZBuffer::~ZBuffer()
+void ZBuffer::operator delete(void *ptr)
 {
-    close(rfd);
-    close(wfd);
+    auto buf = static_cast<ZBuffer*>(ptr);
+    if (--buf->ref > 0) return;
+    LinkList<ZBuffer>::collect(
+        static_cast<LinkList<ZBuffer>*>(ptr)
+    );
 }

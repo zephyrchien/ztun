@@ -6,6 +6,19 @@ Connector::Connector(Event* event, const int rfd, const int lfd):
 
 Connector::~Connector() { }
 
+void* Connector::operator new(std::size_t size)
+{
+    auto ptr = LinkList<Connector>::alloc();
+    return ptr;
+}
+
+void Connector::operator delete(void *ptr)
+{
+    LinkList<Connector>::collect(
+        static_cast<LinkList<Connector>*>(ptr)
+    );
+}
+
 int Connector::callback(uint32_t events)
 {
     if (events & EPOLLOUT) return on_connect();
@@ -58,8 +71,9 @@ int Connector::on_connect()
 
     DEBUG("connector[%d-%d]: init buffer and readwriter, add event[rw]\n",
         lfd_, rfd_);
-    SharedZBuffer rbuf = std::make_shared<ZBuffer>();
-    SharedZBuffer wbuf = std::make_shared<ZBuffer>();
+    ZBuffer* rbuf = ZBuffer::create();
+    ZBuffer* wbuf = ZBuffer::create();
+    rbuf->ref = wbuf->ref = 2;
     ReadWriter* rw_fwd = new ReadWriter(ev, lfd_, lfd2, rbuf, wbuf);
     ReadWriter* rw_rev = new ReadWriter(ev, rfd_, rfd2, wbuf, rbuf);
     rw_fwd->another = rw_rev; rw_rev->another = rw_fwd;

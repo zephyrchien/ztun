@@ -7,6 +7,19 @@ Timer::Timer(const int t, const int s, const int r, const bool p):
 
 Timer::~Timer() { }
 
+void* Timer::operator new(std::size_t size)
+{
+    auto ptr = LinkList<Timer>::alloc();
+    return ptr;
+}
+
+void Timer::operator delete(void *ptr)
+{
+    LinkList<Timer>::collect(
+        static_cast<LinkList<Timer>*>(ptr)
+    );
+}
+
 bool Timer::is_head() const
 {
     return prev == nullptr;
