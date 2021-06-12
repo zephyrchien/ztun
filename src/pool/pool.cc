@@ -19,13 +19,13 @@ template<typename T>
 LinkList<T>* LinkList<T>::create()
 {
     LinkList<T>* head = NEWT;
-    if (ISPIPE) init_pipe(head);
+    //if (ISPIPE) init_pipe(head);
     LinkList<T>* last = head;
     int size = LinkList<T>::min_size;
     for (int i = 0; i < size; i++)
     {
         LinkList<T> *next = NEWT;
-        if (ISPIPE) init_pipe(next);
+        //if (ISPIPE) init_pipe(next);
         last->next = next;
         last = next;
     }
@@ -43,7 +43,7 @@ void LinkList<T>::destroy(LinkList<T>* head)
     {
         px = ptr;
         ptr = ptr->next;
-        if (ISPIPE) close_pipe(px);
+        //if (ISPIPE) close_pipe(px);
         std::free(px);
     }
 }
@@ -56,7 +56,7 @@ LinkList<T>* LinkList<T>::alloc()
     {
         LinkList<T> *next = NEWT;
         next->next = nullptr;
-        if (ISPIPE) init_pipe(next);
+        //if (ISPIPE) init_pipe(next);
         ptr->next = next;
     }
     HEAD = ptr->next;
@@ -71,6 +71,7 @@ void LinkList<T>::collect(LinkList<T>* ptr)
     ptr->next = head;
 }
 
+/**
 template<>
 void LinkList<ZBuffer>::init_pipe(LinkList<ZBuffer>* ptr)
 {
@@ -86,6 +87,7 @@ void LinkList<ZBuffer>::close_pipe(LinkList<ZBuffer>* ptr)
     close(ptr->elem.rfd);
     close(ptr->elem.wfd);
 }
+*/
 
 Endpoint Pool::empty_ep = Endpoint(
     [](uint32_t){ return 0; }, 

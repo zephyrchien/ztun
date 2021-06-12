@@ -33,8 +33,8 @@ struct LinkList
     static void destroy(LinkList<T>*);
     static LinkList<T>* alloc();
     static void collect(LinkList<T>*);
-    static void init_pipe(LinkList<T>*);
-    static void close_pipe(LinkList<T>*);
+    //static void init_pipe(LinkList<T>*);
+    //static void close_pipe(LinkList<T>*);
 };
 
 struct Pool

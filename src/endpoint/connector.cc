@@ -65,8 +65,8 @@ int Connector::on_connect()
 
     DEBUG("connector[%d-%d]: init buffer and readwriter, add event[rw]\n",
         lfd_, rfd_);
-    ZBuffer* rbuf = ZBuffer::create();
-    ZBuffer* wbuf = ZBuffer::create();
+    ZBuffer* rbuf = new ZBuffer();
+    ZBuffer* wbuf = new ZBuffer();
     rbuf->ref = wbuf->ref = 2;
     ReadWriter* rw_fwd = new ReadWriter(ev, lfd_, lfd2, rbuf, wbuf);
     ReadWriter* rw_rev = new ReadWriter(ev, rfd_, rfd2, wbuf, rbuf);

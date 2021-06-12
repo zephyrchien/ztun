@@ -8,13 +8,16 @@
 
 struct ZBuffer
 {
-    int ref;
     int rfd;
     int wfd;
+    int ref;
     int offset;
     const static int size = 0x10000;
 
-    static ZBuffer* create();
+    //static ZBuffer* create();
+    explicit ZBuffer();
+    ~ZBuffer();
+    void* operator new(std::size_t);
     void operator delete(void *ptr);
     inline int xread(const int, int&);
     inline int xwrite(const int, int&);
