@@ -32,6 +32,7 @@ struct Config
     string connect_timeout;
     string resolve_intv;
     string resolve_timeout;
+    string prealloc;
 
     // endpoint config
     vector<EndpointConfig> ep_vec;

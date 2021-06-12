@@ -178,7 +178,14 @@ int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
 
 int init_mempool(Config* config)
 {
-    Pool::init();
+    int prealloc = PREALLOC_SIZE;
+    try {
+        if (!config->prealloc.empty())
+        prealloc = std::stoi(config->prealloc);
+    } catch (...) {
+        return -1;
+    }
+    Pool::init(prealloc);
     return 0;
 }
 
@@ -215,7 +222,12 @@ int main(int argc, char **argv)
     }
     
     // init memory pool
-    init_mempool(config);
+    if (init_mempool(config) < 0)
+    {
+        delete config;
+        delete event;
+        return 1;
+    }
 
     // init endpoints
     vector<Listener> lis;

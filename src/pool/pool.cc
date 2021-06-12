@@ -1,27 +1,14 @@
 #include "pool.h"
 
 
-template<>
-int LinkList<Timer>::min_size = TIMER_PREALLOC_SIZE;
-
-template<>
-int LinkList<ZBuffer>::min_size = BUFFER_PREALLOC_SIZE;
-
-template<>
-int LinkList<Connector>::min_size = CC_PREALLOC_SIZE;
-
-template<>
-int LinkList<ReadWriter>::min_size = RW_PREALLOC_SIZE;
-
 template<typename T> LinkList<T>* HEAD = nullptr;
 
 template<typename T>
-LinkList<T>* LinkList<T>::create()
+LinkList<T>* LinkList<T>::create(const int size)
 {
     LinkList<T>* head = NEWT;
     //if (ISPIPE) init_pipe(head);
     LinkList<T>* last = head;
-    int size = LinkList<T>::min_size;
     for (int i = 0; i < size; i++)
     {
         LinkList<T> *next = NEWT;
@@ -109,12 +96,12 @@ Pool::~Pool()
     LinkList<ReadWriter>::destroy(instance->rw_pool);
 }
 
-int Pool::init()
+int Pool::init(const int size)
 {
-    auto t = LinkList<Timer>::create();
-    auto z = LinkList<ZBuffer>::create();
-    auto cc = LinkList<Connector>::create();
-    auto rw = LinkList<ReadWriter>::create();
+    auto t = LinkList<Timer>::create(size*TIMER_PREALLOC_RATIO);
+    auto z = LinkList<ZBuffer>::create(size*BUFFER_PREALLOC_RATIO);
+    auto cc = LinkList<Connector>::create(size*CC_PREALLOC_RATIO);
+    auto rw = LinkList<ReadWriter>::create(size*RW_PREALLOC_RATIO);
     instance = std::unique_ptr<Pool>(new Pool(t, z, cc, rw));
     return 0;
 }

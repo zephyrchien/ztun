@@ -83,6 +83,8 @@ int Config::parse_global_conf(pair<string, string>& kv)
         this->resolve_intv = kv.second;
     else if (kv.first == "resolve_timeout")
         this->resolve_timeout = kv.second;
+    else if (kv.first == "prealloc")
+        this->prealloc = kv.second;
     else return -1;
     return 0;
 }
