@@ -37,9 +37,16 @@ class ReadWriter
         void operator delete(void*);
 
     public:
-        int callback(uint32_t) ;
+        inline int callback(uint32_t) ;
         int on_read();
         int on_write();
 };
+
+inline int ReadWriter::callback(uint32_t events)
+{
+    if (events & EPOLLIN) return on_read();
+    if (events & EPOLLOUT) return on_write();
+    return -1;
+}
 
 #endif

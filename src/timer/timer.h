@@ -22,8 +22,8 @@ struct Timer
     ~Timer();
     void* operator new(std::size_t);
     void operator delete(void*);
-    bool is_head() const;
-    bool is_tail() const;
+    inline bool is_head() const { return prev == nullptr; };
+    inline bool is_tail() const { return next == nullptr; };
 };
 
 #endif

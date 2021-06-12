@@ -3,7 +3,6 @@
 
 #include <array>
 #include <memory>
-#include <unordered_set>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <cstdint>
@@ -17,10 +16,6 @@ class Event
         const int fd_;
         const static int maxev_ = 1024;
         std::array<epoll_event, maxev_> events_;
-
-    public:
-        enum STATUS { OK, ERR, CAUTION };
-        PtrSet ptrset_;
 
     public:
         explicit Event();

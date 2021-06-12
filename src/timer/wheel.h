@@ -40,7 +40,22 @@ class TimeWheel
         int tick();
     
     public:
-        int callback(uint32_t);
+        inline int callback(uint32_t);
 };
+
+inline int TimeWheel::callback(uint32_t event)
+{
+    if (event & EPOLLIN)
+    {
+        uint64_t n = 0;
+        int x __attribute__((unused)) = read(fd_, &n, sizeof(n));
+        for(uint64_t i = 0; i < n; i++)
+        {
+            tick();
+        }
+        return 0;
+    }
+    return -1;
+}
 
 #endif

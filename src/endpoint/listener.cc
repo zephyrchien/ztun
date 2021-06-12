@@ -49,7 +49,7 @@ int Listener::on_accept()
                 && errno != ECONNABORTED && errno != EPROTO)
                 WARN("listener[%d]: accept error %s\n",
                 fd_, const_cast<const char*>(strerror(errno)));
-            return Event::OK;
+            return 0;
         }
         INFO("listener[%d]: new connection %s -> %s\n",
             fd_, to_string(family_, sa).c_str(),
@@ -90,11 +90,5 @@ int Listener::on_accept()
         close(conn);
         close(rfd);
     }
-    return Event::OK;
-}
-
-int Listener::callback(uint32_t events)
-{
-    if (events & EPOLLIN) return on_accept();
-    return Event::ERR;
+    return 0;
 }

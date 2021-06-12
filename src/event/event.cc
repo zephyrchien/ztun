@@ -1,10 +1,7 @@
 #include "event.h"
 
 
-Event::Event(): fd_(epoll_create(1))
-{
-    ptrset_.reserve(20);
-}
+Event::Event(): fd_(epoll_create(1)) { }
 
 Event::~Event()
 {
@@ -49,28 +46,17 @@ int Event::poll(int timeout)
 
 int Event::run()
 {
-    int nready, ev, ret;
-    bool need_skip = false;
+    int nready, ev;
     Endpoint* ep;
     while(true)
     {
-        if (need_skip)
-        {
-            ptrset_.clear();
-            need_skip = false;
-        }
         nready = epoll_wait(fd_, events_.data(), maxev_, -1);
         if (nready <= 0) continue;
         for (int i=0; i<nready; i++)
         {
             ev = events_[i].events;
             ep = static_cast<Endpoint*>(events_[i].data.ptr);
-            if (need_skip &&
-                ptrset_.find(reinterpret_cast<uintptr_t>(ep))
-                != ptrset_.end()
-            ) continue;
-            ret = ep->callback(ev);
-            if (ret == Event::CAUTION) need_skip = true;
+            ep->callback(ev);
         }
     }
     delete this;

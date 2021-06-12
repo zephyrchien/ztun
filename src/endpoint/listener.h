@@ -42,7 +42,13 @@ class Listener
 
     public:
         int on_accept();
-        int callback(uint32_t);
+        inline int callback(uint32_t);
 };
+
+inline int Listener::callback(uint32_t events)
+{
+    if (events & EPOLLIN) return on_accept();
+    return -1;
+}
 
 #endif

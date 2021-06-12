@@ -37,7 +37,13 @@ class Connector
     public:
         int on_connect();
         int on_timeout();
-        int callback(uint32_t);
+        inline int callback(uint32_t);
 };
+
+inline int Connector::callback(uint32_t events)
+{
+    if (events & EPOLLOUT) return on_connect();
+    return -1;
+}
 
 #endif

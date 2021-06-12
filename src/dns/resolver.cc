@@ -57,7 +57,7 @@ int Resolver::callback(uint32_t event)
         q = reinterpret_cast<Query*>(info.ssi_ptr);
         q->callback(0);
     }
-    return Event::OK;
+    return 0;
 }
 
 int Resolver::on_timeout()

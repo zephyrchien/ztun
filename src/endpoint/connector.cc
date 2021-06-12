@@ -19,12 +19,6 @@ void Connector::operator delete(void *ptr)
     );
 }
 
-int Connector::callback(uint32_t events)
-{
-    if (events & EPOLLOUT) return on_connect();
-    return Event::ERR;
-}
-
 int Connector::on_timeout()
 {
     WARN("connector[%d-%d]: connect timeout\n", lfd_, rfd_);
@@ -32,7 +26,7 @@ int Connector::on_timeout()
     close(lfd_);
     close(rfd_);
     delete this;
-    return Event::CAUTION;
+    return -1;
 }
 
 int Connector::on_connect()
@@ -51,7 +45,7 @@ int Connector::on_connect()
         close(lfd_);
         close(rfd_);
         delete this;
-        return Event::ERR;
+        return -1;
     }
 
     DEBUG("connector[%d-%d]: dup read & write fd\n", lfd_, rfd_);
@@ -66,7 +60,7 @@ int Connector::on_connect()
         close(rfd2);
         delete this;
         WARN("connector[%d-%d]: dup read & write fd failed\n", lfd_, rfd_);
-        return Event::ERR;
+        return -1;
     }
 
     DEBUG("connector[%d-%d]: init buffer and readwriter, add event[rw]\n",
@@ -88,5 +82,5 @@ int Connector::on_connect()
     ev->mod(rfd_, EPOLLIN|EPOLLET, &rw_rev->ep);
     delete this;
     DEBUG("connector[%d-%d]: delete connector\n", lfd_, rfd_);
-    return Event::OK;
+    return 0;
 }

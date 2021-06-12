@@ -79,7 +79,7 @@ void TimeWheel::del(const Timer* t)
 
 int TimeWheel::tick()
 {
-    int ret = Event::OK;
+    int ret = 0;
     Timer *t = slots_[cursor_];
     Timer *tx = nullptr;
     while (t != nullptr)
@@ -129,19 +129,3 @@ int TimeWheel::tick()
     return ret;
 }
 
-int TimeWheel::callback(uint32_t event)
-{
-    int ret = Event::OK;
-    if (event & EPOLLIN)
-    {
-        uint64_t n = 0;
-        int x __attribute__((unused)) = read(fd_, &n, sizeof(n));
-        for(uint64_t i = 0; i < n; i++)
-        {
-            if (tick() == Event::CAUTION)
-                ret = Event::CAUTION;
-        }
-        return ret;
-    }
-    return Event::ERR;
-}

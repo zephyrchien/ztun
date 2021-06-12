@@ -20,12 +20,3 @@ void Timer::operator delete(void *ptr)
     );
 }
 
-bool Timer::is_head() const
-{
-    return prev == nullptr;
-}
-
-bool Timer::is_tail() const
-{
-    return next == nullptr;
-}

@@ -34,8 +34,8 @@ struct ZBuffer;
 struct RingBuffer;
 struct Timer;
 struct Endpoint;
-class Event;
 struct Config;
+class Event;
 class Log;
 class TimeWheel;
 class Listener;
@@ -44,11 +44,9 @@ class ReadWriter;
 class Query;
 class Resolver;
 
-typedef unordered_set<uintptr_t> PtrSet;
 typedef unique_ptr<Log> OwnedLogger;
 typedef unique_ptr<TimeWheel> OwnedTimer;
 typedef unique_ptr<Resolver> OwnedResolver;
-typedef shared_ptr<ZBuffer> SharedZBuffer;
 typedef unique_ptr<RingBuffer> OwnedRingBuffer;
 
 string& trim_space_left(string&);

@@ -25,16 +25,11 @@ void* ReadWriter::operator new(std::size_t size)
 
 void ReadWriter::operator delete(void *ptr)
 {
+    auto rw = static_cast<ReadWriter*>(ptr);
+    rw->ep = Pool::empty_ep;
     LinkList<ReadWriter>::collect(
         static_cast<LinkList<ReadWriter>*>(ptr)
     );
-}
-
-int ReadWriter::callback(uint32_t events)
-{
-    if (events & EPOLLIN) return on_read();
-    if (events & EPOLLOUT) return on_write();
-    return Event::ERR;
 }
 
 int ReadWriter::on_read()
@@ -48,7 +43,7 @@ int ReadWriter::on_read()
     {
         DEBUG("reader[%d]: buffer is full\n", rfd_);
         int ret = another->on_write();
-        if (ret == Event::OK)
+        if (ret == 0)
             ev->mod(rfd_, EPOLLIN|EPOLLET, &ep);
         return ret;
     }
@@ -65,21 +60,16 @@ int ReadWriter::on_read()
         another->rev = true;
         another->another = nullptr;
         another->on_write();
-        ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&ep));
-        DEBUG("reader[%d]: delete reader, add to ptrset\n", rfd_);
         delete this;
-        return Event::CAUTION;
+        return 0;
     }
 
     // unexpected error
     WARN("reader[%d]: failed, %s\n", rfd_,
         const_cast<const char*>(strerror(errno)));
-    ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&ep));
-    ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&another->ep));
-    DEBUG("reader[%d]: delete reader and writer, add to ptrset\n", rfd_);
     delete another;
     delete this;
-    return Event::CAUTION;
+    return -1;
 }
 
 int ReadWriter::on_write()
@@ -94,12 +84,10 @@ int ReadWriter::on_write()
         if (rev)
         {
             DEBUG("writer[%d]: finished, shutdown now\n", wfd_);
-            ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&ep));
-            DEBUG("writer[%d]: delete writer, add to ptrset\n", wfd_);
             delete this;
-            return Event::CAUTION;
+            return 1;
         }
-        return Event::OK;
+        return 0;
     }
     if (n < 0 && (errno == EWOULDBLOCK || errno == EAGAIN))
     {
@@ -110,15 +98,12 @@ int ReadWriter::on_write()
             ev->add(wfd_, EPOLLOUT|EPOLLET|EPOLLONESHOT, &ep);
         }else
             ev->mod(wfd_, EPOLLOUT|EPOLLET|EPOLLONESHOT, &ep);
-        return Event::OK;
+        return 0;
     }
     
     WARN("writer[%d]: failed, %s\n", wfd_,
         const_cast<const char*>(strerror(errno)));
-    ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&ep));
-    ev->ptrset_.emplace(reinterpret_cast<uintptr_t>(&another->ep));
-    DEBUG("writer[%d]: delete reader and writer, add to ptrset\n", wfd_);
     delete another;
     delete this;
-    return Event::CAUTION;
+    return -1;
 }
