@@ -38,15 +38,10 @@ struct LinkList
 
 struct Pool
 {
-    LinkList<Timer> *timer_pool;
-    LinkList<ZBuffer> *pipe_pool;
-    LinkList<Connector> *cc_pool;
-    LinkList<ReadWriter> *rw_pool;
     static Endpoint empty_ep;
     static std::unique_ptr<Pool> instance;
 
-    explicit Pool(LinkList<Timer>*, LinkList<ZBuffer>*,
-        LinkList<Connector>*, LinkList<ReadWriter>*);
+    explicit Pool();
     ~Pool();
     static int init(const int);
 };

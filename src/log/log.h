@@ -11,11 +11,15 @@
 
 namespace chrono = std::chrono;
 
-#define DEBUG(...) \
+#ifndef NDEBUG
+    #define DEBUG(...) \
     if (Log::instance()->level >= Log::LEVEL::DEBUG) \
     Log::instance()->log(\
     Log::LEVEL::DEBUG, Log::BUF_LINE::LDEBUG, \
-    "dbug", __VA_ARGS__)
+    "debug", __VA_ARGS__)
+#else
+    #define DEBUG(...) { }
+#endif
 #define INFO(...) \
     if (Log::instance()->level >= Log::LEVEL::INFO) \
     Log::instance()->log(\

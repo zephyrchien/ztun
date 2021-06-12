@@ -11,8 +11,8 @@ Listener::Listener(Event* event, const addrinfo* hints,
     set_reuseaddr(fd_);
     set_nonblocking(fd_);
     auto sa = reinterpret_cast<const sockaddr*>(ss);
-    INFO("listener[%d]: bind and listen %s\n",
-        fd_, to_string(family_, sa).c_str());
+    INFO("bind and listen %s\n",
+        to_string(family_, sa).c_str());
     if (bind(fd_, sa, sizeof(sockaddr_in6)) < 0)
     {
         close(fd_);
@@ -47,13 +47,12 @@ int Listener::on_accept()
         {
             if (errno != EAGAIN && errno != EWOULDBLOCK
                 && errno != ECONNABORTED && errno != EPROTO)
-                WARN("listener[%d]: accept error %s\n",
-                fd_, const_cast<const char*>(strerror(errno)));
+                WARN("accept error %s\n",
+                const_cast<const char*>(strerror(errno)));
             return 0;
         }
-        INFO("listener[%d]: new connection %s -> %s\n",
-            fd_, to_string(family_, sa).c_str(),
-            to_string(hints_->ai_family, hints_->ai_addr).c_str());
+        INFO("new connection from %s\n",
+            to_string(family_, sa).c_str());
 
         int rfd = socket(AF_INET, SOCK_STREAM, 0);
         set_nonblocking(rfd);
@@ -83,7 +82,7 @@ int Listener::on_accept()
             DEBUG("listener[%d]: connect in progress\n", fd_);
             continue;
         }
-        WARN("listener[%d]: connect failed immediately, %s\n",
+        WARN("connect failed immediately, %s\n",
             fd_, const_cast<const char*>(strerror(errno)));
         ev->del(rfd);
         delete c;

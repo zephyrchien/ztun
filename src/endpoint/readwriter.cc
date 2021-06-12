@@ -65,7 +65,7 @@ int ReadWriter::on_read()
     }
 
     // unexpected error
-    WARN("reader[%d]: failed, %s\n", rfd_,
+    WARN("read failed, %s\n",
         const_cast<const char*>(strerror(errno)));
     delete another;
     delete this;
@@ -101,7 +101,7 @@ int ReadWriter::on_write()
         return 0;
     }
     
-    WARN("writer[%d]: failed, %s\n", wfd_,
+    WARN("write failed, %s\n",
         const_cast<const char*>(strerror(errno)));
     delete another;
     delete this;

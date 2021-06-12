@@ -27,7 +27,7 @@ int Query::callback(uint32_t event)
     int ret = gai_error(data);
     if (ret != 0)
     {
-        WARN("resolver: resolve %s failed, %s\n", name.c_str(),
+        WARN("resolve %s failed, %s\n", name.c_str(),
             gai_strerror(ret));
         data->ar_result = nullptr;
         return -1;
@@ -40,7 +40,7 @@ int Query::callback(uint32_t event)
     auto src = reinterpret_cast<char*>(data->ar_result->ai_addr);
     auto dst = reinterpret_cast<char*>(hints->ai_addr);
     std::copy_n(src, n, dst);
-    INFO("resolver: resolve %s -> %s\n", name.c_str(),
+    INFO("resolve %s => %s\n", name.c_str(),
         to_string(hints->ai_family, hints->ai_addr).c_str());
     freeaddrinfo(data->ar_result);
     data->ar_result = nullptr;
@@ -49,7 +49,7 @@ int Query::callback(uint32_t event)
 
 int Query::on_timeout()
 {
-    WARN("resolver: lookup %s timeout\n", name.c_str());
+    WARN("resolve %s timeout\n", name.c_str());
     timer = nullptr;
     gai_cancel(data);
     data->ar_result = nullptr;

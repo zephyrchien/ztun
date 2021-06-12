@@ -59,11 +59,11 @@ void Log::log(LEVEL level, BUF_LINE line, const char* lv,
     int n = snprintf(text_buf, text_size, fmt_buf, time_buf, lv, args...);
     int ret = buf_->xread(text_buf, n);
     if (ret == 0) line_++;
-    if (line_ > line) 
-    {
+    //if (line_ > line) 
+    //{
         buf_->xwrite(fd_, ret);
-        (ret == 0) && (line_ = 0);
-    }
+        //(ret == 0) && (line_ = 0);
+    //}
 }
 
 template<typename ...Args>

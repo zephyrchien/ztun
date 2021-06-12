@@ -15,7 +15,7 @@
 
 using std::vector;
 using std::exception;
-const static string version = "v0.1.0";
+const static string version = "v0.2.0";
 const static string usage = 
     "usage: ztun [-v] "
     "[-c <config>] "
@@ -46,13 +46,15 @@ int read_config(int argc, char **argv, Config* config)
                 return -1;
         }
     }
-
     int ret;
     if (!config_file.empty())
         ret = config->from_file(config_file);
     else if(!remote_s.empty() && !local_s.empty())
         ret = config->from_cmd(local_s, remote_s);
     else ret = -1;
+    if (ret < 0) std::cerr << usage << std::endl;
+    if (ret > 0) std::cerr << "error in config file: line "
+        << ret << std::endl;
     return ret;
 }
 
@@ -108,21 +110,19 @@ int init_resolver(Event* event, Config* config)
     return 0;
 }
 
+// init logger, timer, resolver
 int init_utils(Event* event, Config* config)
 {
-    // init logger
     if (init_logger(config) < 0)
     {
         std::cerr << "failed to init logger" << std::endl;
         return -1;
     }
-    // init timer
     if (init_timer(event, config) < 0)
     {
         std::cerr << "failed to init timer" << std::endl;
         return -1;
     }
-    // init resolver
     if (init_resolver(event, config) < 0)
     {
         std::cerr << "failed to init resolver" << std::endl;
@@ -131,15 +131,23 @@ int init_utils(Event* event, Config* config)
     return 0;
 }
 
+int init_mempool(Config* config)
+{
+    int prealloc = PREALLOC_SIZE;
+    try {
+        if (!config->prealloc.empty())
+        prealloc = std::stoi(config->prealloc);
+    } catch (...) {
+        return -1;
+    }
+    Pool::init(prealloc);
+    return 0;
+}
+
 int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
 {
     for (const auto& c: config->ep_vec)
     {
-        std::cerr << "init: " <<
-            c.local_addr << ":" << c.local_port
-            << " -> " <<
-            c.remote_addr << ":" << c.remote_port
-        << std::endl;
         // local
         sa_family_t f;
         auto raw_lsa = to_sockaddr(f, c.local_addr, c.local_port);
@@ -176,16 +184,30 @@ int init_endpoints(vector<Listener>& lis, Event* event, Config* config)
     return 0;
 }
 
-int init_mempool(Config* config)
+int init(int argc, char **argv, Event* event, vector<Listener>& lis)
 {
-    int prealloc = PREALLOC_SIZE;
-    try {
-        if (!config->prealloc.empty())
-        prealloc = std::stoi(config->prealloc);
-    } catch (...) {
-        return -1;
+    // load config from cmd or file
+    Config config;
+    if (read_config(argc, argv, &config) != 0) return -1;
+
+    // init logger, timer, resolver
+    if (init_utils(event, &config) < 0) return -1;
+
+    // prealloc memory
+    if (init_mempool(&config) < 0) return -1;
+
+    // load endpoints
+    lis.reserve(config.ep_vec.size());
+    if (init_endpoints(lis, event, &config) < 0) return -1;
+
+    // register events
+    for (auto it = lis.begin(); it != lis.end(); it++)
+    {
+        it->ep.callback = [=](uint32_t ev) {
+            return it->callback(ev);
+        };
+        event->add(it->inner_fd(), EPOLLIN|EPOLLET, &it->ep);
     }
-    Pool::init(prealloc);
     return 0;
 }
 
@@ -194,60 +216,15 @@ int main(int argc, char **argv)
     // ignore SIGPIPE when write to a closed socket
     signal(SIGPIPE, SIG_IGN);
 
-    // load config from cmd or file
-    int ret = 0;
-    auto config = new Config();
-    ret = read_config(argc, argv, config);
-    if (ret < 0)
-    {
-        std::cerr << usage << std::endl;
-        delete config;
-        return 1;
-    }else if (ret > 0)
-    {
-        std::cerr << "error in config file: line " << ret << std::endl;
-        delete config;
-        return 1;
-    }
+    // event loop
+    Event event;
 
-    // main event loop
-    auto event = new Event();
-
-    // init logger, timer, resolver
-    if (init_utils(event, config) < 0)
-    {
-        delete config;
-        delete event;
-        return 1;
-    }
-    
-    // init memory pool
-    if (init_mempool(config) < 0)
-    {
-        delete config;
-        delete event;
-        return 1;
-    }
-
-    // init endpoints
+    // endpoints
     vector<Listener> lis;
-    lis.reserve(config->ep_vec.size());
-    if (init_endpoints(lis, event, config) < 0)
-    {
-        delete config;
-        delete event;
-        return 1;
-    }
-    
-    delete config;
+
+    // init
+    if (init(argc, argv, &event, lis) < 0) return 1;
+
     // start process
-    for (auto it = lis.begin(); it != lis.end(); it++)
-    {
-        it->ep.callback = [=](uint32_t ev) {
-            return it->callback(ev);
-        };
-        event->add(it->inner_fd(), EPOLLIN|EPOLLET, &it->ep);
-    }
-    event->run();
-    delete event;
+    event.run();
 }

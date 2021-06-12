@@ -83,26 +83,23 @@ Endpoint Pool::empty_ep = Endpoint(
 
 std::unique_ptr<Pool> Pool::instance = nullptr;
 
-Pool::Pool(LinkList<Timer>* t, LinkList<ZBuffer>* z,
-        LinkList<Connector>* cc, LinkList<ReadWriter>* rw):
-        timer_pool(t), pipe_pool(z),
-        cc_pool(cc), rw_pool(rw) { }
+Pool::Pool() { }
 
 Pool::~Pool()
 {
-    LinkList<Timer>::destroy(instance->timer_pool);
-    LinkList<ZBuffer>::destroy(instance->pipe_pool);
-    LinkList<Connector>::destroy(instance->cc_pool);
-    LinkList<ReadWriter>::destroy(instance->rw_pool);
+    LinkList<Timer>::destroy(LinkList<Timer>::head);
+    LinkList<ZBuffer>::destroy(LinkList<ZBuffer>::head);
+    LinkList<Connector>::destroy(LinkList<Connector>::head);
+    LinkList<ReadWriter>::destroy(LinkList<ReadWriter>::head);
 }
 
 int Pool::init(const int size)
 {
-    auto t = LinkList<Timer>::create(size*TIMER_PREALLOC_RATIO);
-    auto z = LinkList<ZBuffer>::create(size*BUFFER_PREALLOC_RATIO);
-    auto cc = LinkList<Connector>::create(size*CC_PREALLOC_RATIO);
-    auto rw = LinkList<ReadWriter>::create(size*RW_PREALLOC_RATIO);
-    instance = std::unique_ptr<Pool>(new Pool(t, z, cc, rw));
+    LinkList<Timer>::create(size*TIMER_PREALLOC_RATIO);
+    LinkList<ZBuffer>::create(size*BUFFER_PREALLOC_RATIO);
+    LinkList<Connector>::create(size*CC_PREALLOC_RATIO);
+    LinkList<ReadWriter>::create(size*RW_PREALLOC_RATIO);
+    instance = std::unique_ptr<Pool>(new Pool());
     return 0;
 }
 

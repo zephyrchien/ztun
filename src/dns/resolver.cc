@@ -71,7 +71,7 @@ int Resolver::on_timeout()
 
 void Resolver::async_lookup(Query *q)
 {
-    DEBUG("resolver: lookup %s\n", q->name.c_str());
+    DEBUG("resolve %s\n", q->name.c_str());
     sigevent sev;
     sev.sigev_notify = SIGEV_SIGNAL;
     sev.sigev_signo = SIGRTMIN;
@@ -79,7 +79,7 @@ void Resolver::async_lookup(Query *q)
     int ret = getaddrinfo_a(GAI_NOWAIT, &q->data, 1, &sev);
     if (ret != 0)
     {
-        WARN("resolver: lookup %s failed, %s\n", q->name.c_str(),
+        WARN("resolve %s failed immediately, %s\n", q->name.c_str(),
             gai_strerror(ret));
         return;
     }

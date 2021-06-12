@@ -21,7 +21,7 @@ void Connector::operator delete(void *ptr)
 
 int Connector::on_timeout()
 {
-    WARN("connector[%d-%d]: connect timeout\n", lfd_, rfd_);
+    WARN("connect timeout\n", lfd_, rfd_);
     ev->del(rfd_);
     close(lfd_);
     close(rfd_);
@@ -38,7 +38,7 @@ int Connector::on_connect()
     int error = get_error(rfd_);
     if (error != 0)
     {
-        WARN("connector[%d-%d]: connect failed, %s\n", 
+        WARN("connect failed, %s\n", 
             lfd_, rfd_,
             const_cast<const char*>(strerror(error)));
         ev->del(rfd_);
@@ -59,7 +59,7 @@ int Connector::on_connect()
         close(lfd2);
         close(rfd2);
         delete this;
-        WARN("connector[%d-%d]: dup read & write fd failed\n", lfd_, rfd_);
+        WARN("dup read & write fd failed\n", lfd_, rfd_);
         return -1;
     }
 
