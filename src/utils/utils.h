@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 #include <memory.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -59,6 +60,7 @@ int split_key_value(const string&, pair<string, string>&);
 
 int set_dualstack(const int);
 int set_reuseaddr(const int);
+int set_nodelay(const int);
 int set_nonblocking(const int);
 int get_error(const int);
 int dup_with_opt(const int);

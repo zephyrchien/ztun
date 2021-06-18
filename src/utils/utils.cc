@@ -13,6 +13,12 @@ int set_reuseaddr(const int fd)
     return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 }
 
+int set_nodelay(const int fd)
+{
+    int opt = 1;
+    return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+};
+
 int set_nonblocking(const int fd)
 {
     int old_opt = fcntl(fd, F_GETFL);

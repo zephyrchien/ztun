@@ -51,11 +51,13 @@ int Listener::on_accept()
                 const_cast<const char*>(strerror(errno)));
             return 0;
         }
+        set_nodelay(conn);
         INFO("new connection from %s\n",
             to_string(family_, sa).c_str());
 
         int rfd = socket(AF_INET, SOCK_STREAM, 0);
         set_nonblocking(rfd);
+        set_nodelay(rfd);
         Connector* c = new Connector(ev, rfd, conn);
         // bind callback func
         c->ep.callback = [=](uint32_t e) {
