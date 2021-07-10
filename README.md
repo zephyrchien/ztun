@@ -9,8 +9,8 @@ Zero Copy
 
 ## Build
 ```
-git clone https://github.com/zephyrchien/ZTUN
-cd ZTUN
+git clone https://github.com/zephyrchien/ztun
+cd ztun
 mkdir build && cd build
 cmake ..
 make
