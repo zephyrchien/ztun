@@ -59,6 +59,5 @@ int Event::run()
             ep->callback(ev);
         }
     }
-    delete this;
     return 0;
 }

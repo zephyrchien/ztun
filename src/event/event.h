@@ -29,6 +29,4 @@ class Event
         int run();
 };
 
-typedef std::shared_ptr<Event> SharedEvent;
-
 #endif
